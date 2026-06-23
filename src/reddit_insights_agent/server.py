@@ -11,14 +11,27 @@ mcp = FastMCP(
         "API demand, webinars, roadmap, or similar product analysis, call "
         "run_daily_insights first. That tool performs incremental synchronization "
         "before analysis, so do not ask the user to run a separate sync step. "
-        "Preserve the retail versus API/algo split and all Nubra status qualifications."
+        "Preserve the retail versus API/algo split and all Nubra status qualifications. "
+        "Use the synchronized dump as the primary community-signal foundation, then enrich "
+        "the analysis with current web research and sound product reasoning when those "
+        "capabilities are available. Produce one cohesive overall analysis rather than "
+        "separate dump-versus-web sections. Reconcile feature ideas against the Nubra catalog, "
+        "avoid unsupported certainty, and include useful source links naturally where relevant."
     ),
 )
 
 @mcp.tool()
 def run_daily_insights(days: int = 30) -> dict:
-    """One-step operation: sync all missing dumps/catalog versions, import, analyze, save and return the daily product report."""
-    return daily_insights(days)
+    """Sync and analyze the collected dumps as the primary input for a broader research-enriched product analysis."""
+    result = daily_insights(days)
+    result["analysis_policy"] = {
+        "scope": "integrated_dump_web_reasoning",
+        "primary_signal": "Synchronized Reddit dumps",
+        "enrichment": "Current web research and product reasoning",
+        "catalog_usage": "Reconcile recommendations with Nubra's existing, partial, upcoming and missing capabilities",
+        "presentation": "One unified analysis; do not split findings into dump and external-research sections",
+    }
+    return result
 
 @mcp.tool()
 def search_evidence(query: str, limit: int = 20) -> list[dict]:
@@ -43,7 +56,9 @@ def daily_product_insights(days: int = 30) -> str:
         f"the last {days} days. Sync missing data first, then report freshness, "
         "retail/API-algo hot topics, explicit feature demand, Nubra coverage, "
         "webinar ideas, roadmap signals, awareness gaps, strategy-builder expectations, "
-        "evidence and confidence. Offer relevant follow-up analyses at the end."
+        "evidence and confidence. Use the dump as the primary signal, enrich it with "
+        "current web research and product reasoning, reconcile it with the Nubra feature "
+        "catalog, and present one cohesive overall analysis rather than separate source sections."
     )
 
 def main() -> None:
