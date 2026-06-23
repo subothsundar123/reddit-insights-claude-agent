@@ -553,15 +553,27 @@ def render_insights_report(
         actions = "<br>".join(f"• {item}" for item in roadmap[horizon]) or "Continue evidence collection."
         lines.append(f"| {horizon} | {actions} |")
 
-    lines += ["", "## 7. Awareness, Documentation and Onboarding Gaps", ""]
+    lines += ["", "## 7. Existing Capabilities Users Are Missing", ""]
     if awareness:
         for feature in awareness[:6]:
             lines.append(
                 f"- **{feature['feature']}** is already available but still appears in user demand. "
-                "Improve feature discovery, task-based documentation, runnable examples and webinar coverage."
+                "Improve its visibility through product discovery, task-based documentation, runnable examples and webinars."
             )
     else:
         lines.append("- No strong available-but-requested match was found in this analysis window.")
+
+    lines += [
+        "",
+        "## 8. What Nubra Can Improve Now",
+        "",
+        "| Area | Practical improvement |",
+        "|---|---|",
+        "| Product | Surface relevant calculators, analytics and feature entry points where users make decisions. |",
+        "| SDK | Add task-based examples, reusable workflows and clearer production-readiness guidance. |",
+        "| MCP | Connect existing data and execution capabilities to guided research and support workflows. |",
+        "| Support | Use a better AI assistant to route users to the right product section, API and example. |",
+    ]
 
     lines.append("")
     return "\n".join(lines)
@@ -581,10 +593,9 @@ def daily_insights(days: int = 30) -> dict[str, Any]:
     ]
     roadmap = build_roadmap(opportunities, data["feature_requests"])
     available_requests = [x for x in data["feature_requests"][:10] if x["status"] == "available"]
-    report = render_insights_report(sync_result, data, opportunities, webinars, roadmap, available_requests)
     return {"sync": sync_result, "analysis": data, "product_opportunities": opportunities,
             "webinars": webinars, "roadmap": roadmap,
-            "awareness_gaps": available_requests, "report_markdown": report,
+            "awareness_gaps": available_requests,
             "available_commands": ["/api-insights", "/retail-insights", "/feature-demand", "/webinar-plan", "/product-roadmap", "/awareness-gaps", "/strategy-builder", "/competitor-insights", "/evidence", "/compare-periods"]}
 
 

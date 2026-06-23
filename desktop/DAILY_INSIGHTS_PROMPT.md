@@ -16,7 +16,8 @@ Use this simple structure:
 4. Retail and API/Algo Discussion Split
 5. Webinar Opportunities
 6. Product Roadmap: Now, Next and Later
-7. Awareness, Documentation and Onboarding Gaps
+7. Existing Capabilities Users Are Missing
+8. What Nubra Can Improve Now
 
 For the topic and feature tables, include what users are discussing, why it matters from a product standpoint, Nubra's current coverage and the recommended action. If Nubra already has a requested capability, recommend discovery, documentation, examples or marketing instead of rebuilding it.
 
@@ -24,4 +25,4 @@ Do not treat Reddit score as unique demand. Separate explicit requests from gene
 
 Use simple, clean English. Keep the report product-focused and solution-oriented. Include useful source links naturally where relevant. Do not create a separate strategy-builder section; incorporate related signals into feature and roadmap recommendations.
 
-After completing the analysis and web research, call `create_insights_pdf` with the finished sections. Return the PDF as the final report. Do not return or save a Markdown report.
+Show the complete report directly in Claude Chat using concise text and clean tables. Do not create, attach or save a PDF or Markdown report file.

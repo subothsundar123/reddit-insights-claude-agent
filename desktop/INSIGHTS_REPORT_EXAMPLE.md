@@ -23,6 +23,22 @@ Use this only as a style and quality reference. Replace all numbers and findings
 | Next | Add advanced analytics and package connected SDK/MCP workflows. |
 | Later | Evaluate advanced execution and scenario tooling after focused customer discovery. |
 
+## Existing Capabilities Users Are Missing
+
+| Existing capability | What the demand indicates | Visibility improvement |
+|---|---|---|
+| Nubra UAT | Users still ask for paper-trading and safe testing workflows. | Position UAT clearly in onboarding, strategy examples and webinars. |
+| Historical data APIs | Users remain unsure about coverage and availability. | Publish a coverage directory, sample queries and backtest-ready examples. |
+
+## What Nubra Can Improve Now
+
+| Area | Practical improvement |
+|---|---|
+| Product | Surface relevant calculators, analytics and feature entry points where users make decisions. |
+| SDK | Add task-based examples, reusable workflows and production-readiness guidance. |
+| MCP | Connect existing APIs to guided research, analytics and support workflows. |
+| Support | Route users to the correct product section, API and example through a better AI assistant. |
+
 ### Writing rules demonstrated
 
 - State the signal first.

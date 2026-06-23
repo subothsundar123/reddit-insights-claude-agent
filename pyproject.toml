@@ -7,7 +7,7 @@ name = "reddit-product-insights-agent"
 version = "1.0.0"
 description = "Incremental GitHub sync, local evidence store, analysis engine, and Claude MCP"
 requires-python = ">=3.11"
-dependencies = ["mcp>=1.9", "reportlab>=4.2"]
+dependencies = ["mcp>=1.9"]
 
 [project.scripts]
 insights-agent = "reddit_insights_agent.cli:main"

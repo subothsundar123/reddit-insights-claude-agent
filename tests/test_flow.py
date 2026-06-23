@@ -28,17 +28,9 @@ class DailyFlowTests(unittest.TestCase):
         self.assertEqual(first["analysis"]["sample"]["direct_posts"], 272)
         self.assertEqual(first["analysis"]["sample"]["web_research_summaries"], 46)
         self.assertIn("/feature-demand", first["available_commands"])
-        report = first["report_markdown"]
-        self.assertIn("## 1. Executive Summary", report)
-        self.assertIn("## 2. Most Discussed Topics and Product Response", report)
-        self.assertIn("Product thinking", report)
-        self.assertIn("Suggested solution", report)
-        self.assertIn("## 6. Product Roadmap", report)
-        self.assertNotIn("Strategy-builder expectations", report)
-        self.assertNotIn("Other market discussion", report)
-        self.assertNotIn("Data available through", report)
-        self.assertNotIn("Confidence", report)
-        self.assertNotIn("Evidence and Confidence", report)
+        self.assertNotIn("report_markdown", first)
+        self.assertFalse(list((self.temp / "reports").glob("*.md")))
+        self.assertFalse(list((self.temp / "reports").glob("*.pdf")))
         self.assertGreaterEqual(len(first["product_opportunities"]), 5)
         self.assertTrue(all(item["solution"] for item in first["product_opportunities"]))
         self.assertEqual(set(first["roadmap"]), {"Now", "Next", "Later"})
@@ -60,40 +52,12 @@ class DailyFlowTests(unittest.TestCase):
         self.assertEqual(desktop["sync"]["available_through"], "2026-06-23")
         self.assertEqual(desktop["analysis"]["sample"]["posts"], 318)
 
-    def test_pdf_is_created_without_markdown_file(self):
-        from reddit_insights_agent.server import create_insights_pdf
-        result = create_insights_pdf(
-            executive_summary=["API reliability needs a visible product response."],
-            topics=[{
-                "topic": "API reliability",
-                "discussion": "Users discuss reconnect behaviour.",
-                "product_thinking": "Reliability builds trust.",
-                "solution": "Publish a health dashboard.",
-            }],
-            api_capabilities=[{
-                "capability": "WebSocket monitoring",
-                "demand": "Repeated reliability questions",
-                "nubra_status": "Proposed",
-                "action": "Add status visibility and SDK examples.",
-            }],
-            segment_split=[{
-                "segment": "API/Algo",
-                "needs": "Reliability and recovery",
-                "product_use": "Improve activation and trust",
-            }],
-            webinars=[{
-                "title": "Reliable WebSockets",
-                "audience": "API developers",
-                "why": "Recurring reliability questions",
-                "outcome": "Improve adoption",
-            }],
-            roadmap={"Now": ["Publish status guidance"], "Next": ["Add analytics"], "Later": []},
-            awareness_gaps=["Improve WebSocket documentation."],
-        )
-        pdf_path = pathlib.Path(result.structuredContent["pdf_path"])
-        self.assertTrue(pdf_path.exists())
-        self.assertEqual(pdf_path.suffix.lower(), ".pdf")
-        self.assertTrue(pdf_path.read_bytes().startswith(b"%PDF"))
-        self.assertFalse(list((self.temp / "reports").glob("*.md")))
+    def test_daily_prompt_returns_chat_report_only(self):
+        from reddit_insights_agent.server import daily_product_insights
+        prompt = daily_product_insights(30)
+        self.assertIn("existing capabilities users are missing", prompt.lower())
+        self.assertIn("what Nubra can improve now", prompt)
+        self.assertIn("directly in this chat", prompt)
+        self.assertNotIn("create_insights_pdf", prompt)
 
 if __name__ == "__main__": unittest.main()

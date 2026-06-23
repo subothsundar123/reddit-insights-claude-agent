@@ -1,11 +1,7 @@
 from __future__ import annotations
 
-import base64
-
-from mcp import types
 from mcp.server.fastmcp import FastMCP
-from .core import compare_periods, daily_insights, feature_lookup, local_root, search
-from .pdf_report import generate_insights_pdf
+from .core import compare_periods, daily_insights, feature_lookup, search
 
 mcp = FastMCP(
     "reddit-product-insights",
@@ -24,8 +20,8 @@ mcp = FastMCP(
         "avoid unsupported certainty, and include useful source links naturally where relevant. "
         "Write in simple, clean English: direct, product-focused and non-repetitive. "
         "For every major signal, explain the product implication and give a practical solution. "
-        "After completing the analysis and any web research, call create_insights_pdf and return "
-        "the PDF as the final report. Do not return or save a Markdown report. "
+        "Return the complete report directly in Claude Chat using concise text and clean tables. "
+        "Do not create, attach or save a PDF or Markdown report file. "
         "Do not display sync status, freshness, sample size, methodology or confidence. "
         "Do not produce generic AI commentary or a separate strategy-builder section."
     ),
@@ -65,7 +61,11 @@ def run_daily_insights(days: int = 30) -> dict:
         "product_opportunities": compact_opportunities,
         "webinar_opportunities": result["webinars"],
         "product_roadmap": result["roadmap"],
-        "awareness_gaps": compact_awareness,
+        "existing_capabilities_users_are_missing": compact_awareness,
+        "improve_now_inputs": {
+            "product_opportunities": compact_opportunities[:5],
+            "current_roadmap_actions": result["roadmap"].get("Now", [])[:6],
+        },
         "top_evidence": analysis["top_evidence"][:10],
         "analysis_policy": policy,
         "report_contract": {
@@ -77,7 +77,8 @@ def run_daily_insights(days: int = 30) -> dict:
                 "Retail and API/Algo Discussion Split",
                 "Webinar Opportunities",
                 "Product Roadmap",
-                "Awareness, Documentation and Onboarding Gaps",
+                "Existing Capabilities Users Are Missing",
+                "What Nubra Can Improve Now",
             ],
             "rules": [
                 "Lead with outcomes, not methodology",
@@ -87,65 +88,11 @@ def run_daily_insights(days: int = 30) -> dict:
                 "Use Nubra only where product coverage or a solution is relevant",
                 "Do not create a separate strategy-builder section",
                 "Do not show freshness, sample size, methodology or confidence",
-                "Create and return the final report as a PDF, not Markdown",
+                "Show the complete report directly in chat using text and tables",
+                "Do not create or attach PDF or Markdown files",
             ],
         },
     }
-
-
-@mcp.tool()
-def create_insights_pdf(
-    executive_summary: list[str],
-    topics: list[dict[str, str]],
-    api_capabilities: list[dict[str, str]],
-    segment_split: list[dict[str, str]],
-    webinars: list[dict[str, str]],
-    roadmap: dict[str, list[str]],
-    awareness_gaps: list[str],
-) -> types.CallToolResult:
-    """Create and return the final Product Insights PDF after analysis and web research are complete."""
-    report = {
-        "executive_summary": executive_summary,
-        "topics": topics,
-        "api_capabilities": api_capabilities,
-        "segment_split": segment_split,
-        "webinars": webinars,
-        "roadmap": roadmap,
-        "awareness_gaps": awareness_gaps,
-    }
-    path = local_root() / "reports" / "reddit-product-api-user-insights.pdf"
-    generate_insights_pdf(path, report)
-    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
-    uri = path.as_uri()
-    return types.CallToolResult(
-        content=[
-            types.TextContent(
-                type="text",
-                text="The Product Insights PDF has been created and attached.",
-            ),
-            types.ResourceLink(
-                type="resource_link",
-                name=path.name,
-                title="Reddit Product and API-User Insights",
-                uri=uri,
-                mimeType="application/pdf",
-                size=path.stat().st_size,
-            ),
-            types.EmbeddedResource(
-                type="resource",
-                resource=types.BlobResourceContents(
-                    uri=uri,
-                    mimeType="application/pdf",
-                    blob=encoded,
-                ),
-            ),
-        ],
-        structuredContent={
-            "pdf_path": str(path),
-            "file_name": path.name,
-            "mime_type": "application/pdf",
-        },
-    )
 
 @mcp.tool()
 def search_evidence(query: str, limit: int = 20) -> list[dict]:
@@ -169,14 +116,15 @@ def daily_product_insights(days: int = 30) -> str:
         f"Run the Reddit Product Insights connector's complete daily workflow for "
         f"the last {days} days. Load all verified dumps currently saved in the shared local folder, then report "
         "retail/API-algo hot topics, explicit feature demand, Nubra coverage, "
-        "webinar ideas, roadmap signals, awareness gaps, "
+        "webinar ideas, roadmap signals, existing capabilities users are missing, "
+        "what Nubra can improve now, "
         "product opportunities and practical solutions. For every important signal, explain the product implication "
         "and recommend a practical solution. Use the dump as the primary signal, enrich it with "
         "current web research and product reasoning, reconcile it with the Nubra feature "
         "catalog, and present one cohesive product-insights analysis rather than separate source sections. "
         "Use the returned product opportunities and roadmap as the foundation. Use simple, clean English, keep it concise, "
-        "avoid repetition and do not add a separate strategy-builder section. After the analysis and web research, "
-        "call create_insights_pdf with the finished sections. Return the PDF instead of Markdown text."
+        "avoid repetition and do not add a separate strategy-builder section. Show the full report directly "
+        "in this chat using short text and clean tables. Do not create or attach a PDF or Markdown file."
     )
 
 def main() -> None:
