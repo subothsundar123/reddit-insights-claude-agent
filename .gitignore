@@ -1,7 +1,7 @@
 __pycache__/
 *.pyc
+*.egg-info/
 .venv/
 .env
 local-data/
 .data-repo-cache/
-
