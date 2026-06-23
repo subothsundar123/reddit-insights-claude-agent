@@ -476,7 +476,7 @@ def build_roadmap(opportunities: list[dict[str, Any]], feature_requests: list[di
     return {bucket: items[:5] for bucket, items in roadmap.items()}
 
 
-def render_leadership_report(
+def render_insights_report(
     sync_result: dict[str, Any],
     data: dict[str, Any],
     opportunities: list[dict[str, Any]],
@@ -594,7 +594,7 @@ def daily_insights(days: int = 30) -> dict[str, Any]:
     ]
     roadmap = build_roadmap(opportunities, data["feature_requests"])
     available_requests = [x for x in data["feature_requests"][:10] if x["status"] == "available"]
-    report = render_leadership_report(sync_result, data, opportunities, webinars, roadmap, available_requests)
+    report = render_insights_report(sync_result, data, opportunities, webinars, roadmap, available_requests)
     report_dir = local_root() / "reports"; report_dir.mkdir(parents=True, exist_ok=True)
     path = report_dir / f"daily-insights-{dt.date.today().isoformat()}.md"; path.write_text(report, encoding="utf-8")
     return {"sync": sync_result, "analysis": data, "product_opportunities": opportunities,

@@ -18,7 +18,7 @@ mcp = FastMCP(
         "capabilities are available. Produce one cohesive overall analysis rather than "
         "separate dump-versus-web sections. Reconcile feature ideas against the Nubra catalog, "
         "avoid unsupported certainty, and include useful source links naturally where relevant. "
-        "Write in a concise leadership-report tone: direct, product-focused and non-repetitive. "
+        "Write in a concise insights-report tone: direct, product-focused and non-repetitive. "
         "For every major signal, explain the product implication and give a practical solution. "
         "Do not produce generic AI commentary or a separate strategy-builder section."
     ),
@@ -63,7 +63,7 @@ def run_daily_insights(days: int = 30) -> dict:
         "report_path": result["report_path"],
         "analysis_policy": policy,
         "report_contract": {
-            "tone": "Meeting-ready, concise, clear and product-led",
+            "tone": "Concise, clear and product-led insights",
             "required_sections": [
                 "Executive Summary",
                 "Most Discussed Topics and Product Response",
@@ -111,7 +111,7 @@ def daily_product_insights(days: int = 30) -> str:
         "evidence and confidence. For every important signal, explain the product implication "
         "and recommend a practical solution. Use the dump as the primary signal, enrich it with "
         "current web research and product reasoning, reconcile it with the Nubra feature "
-        "catalog, and present one cohesive leadership-ready analysis rather than separate source sections. "
+        "catalog, and present one cohesive product-insights analysis rather than separate source sections. "
         "Use the returned report_markdown as the editorial foundation. Keep it concise, "
         "avoid repetition and do not add a separate strategy-builder section."
     )

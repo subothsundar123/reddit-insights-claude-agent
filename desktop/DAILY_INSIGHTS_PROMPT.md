@@ -6,7 +6,7 @@ Use the synchronized dump as the primary community-signal foundation. Enrich it 
 
 Load every verified dump and the latest Nubra feature catalog already saved in the shared local insights folder. Do not access GitHub from Claude Desktop. If no local data exists, tell the user to open Claude Code and run `/update-insights-data`.
 
-Write the result as a clean, meeting-ready product report. Use short, direct sentences and avoid generic AI explanations, repeated observations and long methodology sections. Lead with the insight and business implication. Every major signal must include practical product thinking and a suggested solution.
+Write the result as a clean product insights report. Use short, direct sentences and avoid generic AI explanations, repeated observations and long methodology sections. Lead with the insight and business implication. Every major signal must include practical product thinking and a suggested solution.
 
 Use this exact structure:
 

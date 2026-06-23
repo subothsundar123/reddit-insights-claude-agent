@@ -47,6 +47,6 @@ By default, pulled data, sync state, SQLite, and reports live in `%USERPROFILE%\
 
 ## Insight coverage
 
-The daily report is formatted for a product or leadership meeting. It includes retail/API-algo topics, explicit feature requests, product implications, practical solutions, feature-availability reconciliation, webinar ideas, a Now/Next/Later roadmap, awareness/documentation gaps, evidence and confidence. Related workflow and execution signals are incorporated into feature and roadmap recommendations instead of appearing as a separate section.
+The daily insights report is concise and product-focused. It includes retail/API-algo topics, explicit feature requests, product implications, practical solutions, feature-availability reconciliation, webinar ideas, a Now/Next/Later roadmap, awareness/documentation gaps, evidence and confidence. Related workflow and execution signals are incorporated into feature and roadmap recommendations instead of appearing as a separate section.
 
 No Slack integration and no autonomous external messaging are included.

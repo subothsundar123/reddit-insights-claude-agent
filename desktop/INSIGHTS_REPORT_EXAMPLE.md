@@ -1,4 +1,4 @@
-# Leadership Report Writing Example
+# Insights Report Writing Example
 
 Use this only as a style and quality reference. Replace all numbers and findings with the current evidence.
 
@@ -30,4 +30,4 @@ Use this only as a style and quality reference. Replace all numbers and findings
 - Give a concrete product response.
 - Do not repeat the same point in multiple sections.
 - Avoid vague phrases such as “enhance the experience” without explaining how.
-- Keep the report useful for a product or leadership meeting.
+- Keep the report useful for product analysis and decision-making.
