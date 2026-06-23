@@ -26,6 +26,17 @@ class DailyFlowTests(unittest.TestCase):
         self.assertEqual(first["analysis"]["sample"]["direct_posts"], 272)
         self.assertEqual(first["analysis"]["sample"]["web_research_summaries"], 46)
         self.assertIn("/feature-demand", first["available_commands"])
+        report = first["report_markdown"]
+        self.assertIn("## 1. Executive Summary", report)
+        self.assertIn("## 2. Most Discussed Topics and Product Response", report)
+        self.assertIn("Product thinking", report)
+        self.assertIn("Suggested solution", report)
+        self.assertIn("## 6. Product Roadmap", report)
+        self.assertNotIn("Strategy-builder expectations", report)
+        self.assertNotIn("Other market discussion", report)
+        self.assertGreaterEqual(len(first["product_opportunities"]), 5)
+        self.assertTrue(all(item["solution"] for item in first["product_opportunities"]))
+        self.assertEqual(set(first["roadmap"]), {"Now", "Next", "Later"})
 
     def test_feature_lookup(self):
         from reddit_insights_agent.core import daily_insights, feature_lookup

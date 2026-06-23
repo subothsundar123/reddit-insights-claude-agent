@@ -223,6 +223,72 @@ TOPICS = {
     "Portfolio & P&L analytics": ["p&l", "pnl", "portfolio", "tradebook", "charges", "brokerage"],
     "Investment education": ["learn", "beginner", "how to", "education", "knowledge"],
 }
+
+PRODUCT_PLAYBOOK = {
+    "API reliability & WebSockets": {
+        "product_thinking": "Reliability is part of the API product, not only an infrastructure metric. Visible health and predictable recovery improve developer trust.",
+        "nubra_context": "Realtime WebSocket streams are available; public reliability visibility is a gap.",
+        "solution": "Create a public WebSocket health dashboard with uptime, latency, incident history and stream-level status. Add reconnect, heartbeat and recovery examples to the SDK.",
+        "webinar": "Building resilient trading systems with WebSockets",
+        "horizon": "Now"
+    },
+    "Historical data & backtesting": {
+        "product_thinking": "Users cannot confidently adopt backtesting until they understand coverage, adjustments, expiry handling and data-quality assumptions.",
+        "nubra_context": "Basic historical APIs and NubraOSS backtesting exist, but availability and coverage need clearer discovery.",
+        "solution": "Publish a historical-data coverage directory by asset, interval and earliest date. Add an availability endpoint and requirement box, then provide backtest-ready examples through NubraOSS and MCP.",
+        "webinar": "From historical data to a trustworthy backtest",
+        "horizon": "Now"
+    },
+    "Strategy building & automation": {
+        "product_thinking": "The strongest opportunity is reducing the distance between an idea, validation and controlled execution rather than adding another isolated condition form.",
+        "nubra_context": "NubraOSS, UAT, market/order APIs and emerging MCP/OMS capabilities cover parts of this workflow.",
+        "solution": "Package reusable strategy templates and guided MCP workflows that connect validation, Nubra UAT and controlled execution. Keep OMS V3 claims qualified until public availability is confirmed.",
+        "webinar": "Turning a trading idea into a tested automated workflow",
+        "horizon": "Next"
+    },
+    "Options analytics & risk": {
+        "product_thinking": "Raw option-chain fields are necessary but users make decisions through scenarios, costs, liquidity and risk interpretation.",
+        "nubra_context": "Option chain, OI, IV and Greeks are available; advanced derived analytics remain an opportunity.",
+        "solution": "Add payoff, breakeven, Greeks scenarios, IV rank, slippage estimates and liquidity scores through the SDK and MCP. Surface margin and settlement implications before execution.",
+        "webinar": "Using option-chain data for risk-aware strategy decisions",
+        "horizon": "Next"
+    },
+    "Order execution & OMS": {
+        "product_thinking": "Execution quality depends on state recovery, partial-fill handling, reconciliation and observability—not only order-placement speed.",
+        "nubra_context": "Order, basket/flexi, margin and order-update capabilities exist; advanced OMS V3 scope is internal/unverified.",
+        "solution": "Provide reference execution patterns for idempotency, partial fills, reconnect recovery and reconciliation. Expose structured execution analytics and webhooks where appropriate.",
+        "webinar": "Reliable order execution: partial fills, retries and reconciliation",
+        "horizon": "Next"
+    },
+    "Market news & sentiment": {
+        "product_thinking": "News is more valuable when it is connected to instruments, events and the user’s workflow rather than delivered as an isolated feed.",
+        "nubra_context": "A news capability is known internally but public API exposure requires confirmation.",
+        "solution": "Expose a documented news API and make it available to Nubra MCP for instrument-linked summaries, event context and research workflows.",
+        "webinar": "Combining market data and news in API workflows",
+        "horizon": "Next"
+    },
+    "Developer onboarding": {
+        "product_thinking": "Authentication and setup friction directly affect activation. Existing capabilities create little value if developers cannot discover and implement them quickly.",
+        "nubra_context": "Automated TOTP, primary/secondary IP and multi-session support are available.",
+        "solution": "Create a production-readiness quickstart covering TOTP, IP management, sessions, errors and recovery. Consider exposing the existing static-IP update capability as a documented endpoint.",
+        "webinar": "Go from API access to a production-ready Nubra integration",
+        "horizon": "Now"
+    },
+    "Portfolio & P&L analytics": {
+        "product_thinking": "Users want decision and performance context over their activity, not only raw order, position and holding records.",
+        "nubra_context": "Orders, positions, holdings and funds are available and provide the base data.",
+        "solution": "Add brokerage and charges calculation, realised/unrealised P&L analytics and strategy/order-history insights using stored trade data.",
+        "webinar": "Building portfolio and P&L analytics with Nubra APIs",
+        "horizon": "Next"
+    },
+    "Investment education": {
+        "product_thinking": "Repeated beginner questions are both a support burden and an activation opportunity when answered inside the product journey.",
+        "nubra_context": "The documentation assistant and MCP can provide contextual education.",
+        "solution": "Use MCP and the support assistant to guide users to the right API, example and risk concept. Convert recurring questions into short webinars and runnable notebooks.",
+        "webinar": "A practical starting path for retail algo and API users",
+        "horizon": "Now"
+    }
+}
 REQUEST = re.compile(r"\b(need|want|wish|request|missing|looking for|would like|should have|feature|support for|can we|is there an api)\b", re.I)
 
 
@@ -338,21 +404,182 @@ def _roadmap_action(status: str) -> str:
             "internal_unverified": "Confirm ownership and public exposure", "not_available": "Evaluate for discovery/roadmap"}.get(status, "Investigate")
 
 
+def _feature_action(status: str) -> str:
+    return {
+        "available": "Do not rebuild. Improve discovery, documentation, examples and adoption.",
+        "upcoming": "Confirm release scope, readiness and positioning before external promotion.",
+        "partial": "Close the missing workflow or access gap, then package the capability clearly.",
+        "internal_unverified": "Validate ownership and public exposure before making a product claim.",
+        "not_available": "Run focused discovery, validate demand and scope it as a roadmap candidate.",
+    }.get(status, "Investigate the user need and confirm current product coverage.")
+
+
+def build_product_opportunities(data: dict[str, Any]) -> list[dict[str, Any]]:
+    opportunities = []
+    for topic in data["topics"]:
+        if topic["topic"] == "Other market discussion" or topic["topic"] not in PRODUCT_PLAYBOOK:
+            continue
+        play = PRODUCT_PLAYBOOK[topic["topic"]]
+        priority = "High" if topic["mentions"] >= 20 or topic["api_algo"] >= 15 else "Medium"
+        opportunities.append({
+            "topic": topic["topic"],
+            "signal": f"{topic['mentions']} discussions; retail {topic['retail']}, API/algo {topic['api_algo']}",
+            "mentions": topic["mentions"],
+            "engagement": topic["engagement"],
+            "retail": topic["retail"],
+            "api_algo": topic["api_algo"],
+            "priority": priority,
+            "product_thinking": play["product_thinking"],
+            "nubra_context": play["nubra_context"],
+            "solution": play["solution"],
+            "webinar": play["webinar"],
+            "horizon": play["horizon"],
+        })
+    return opportunities[:8]
+
+
+def build_roadmap(opportunities: list[dict[str, Any]], feature_requests: list[dict[str, Any]]) -> dict[str, list[str]]:
+    roadmap: dict[str, list[str]] = {"Now": [], "Next": [], "Later": []}
+    for opportunity in opportunities:
+        bucket = opportunity["horizon"]
+        roadmap[bucket].append(f"{opportunity['topic']}: {opportunity['solution']}")
+    for feature in feature_requests[:8]:
+        status = feature["status"]
+        if status == "available":
+            bucket = "Now"
+        elif status in {"partial", "upcoming", "internal_unverified"}:
+            bucket = "Next"
+        else:
+            bucket = "Next" if feature["mentions"] >= 2 else "Later"
+        item = f"{feature['feature']}: {_feature_action(status)}"
+        if item not in roadmap[bucket]:
+            roadmap[bucket].append(item)
+    return {bucket: items[:5] for bucket, items in roadmap.items()}
+
+
+def render_leadership_report(
+    sync_result: dict[str, Any],
+    data: dict[str, Any],
+    opportunities: list[dict[str, Any]],
+    webinars: list[dict[str, Any]],
+    roadmap: dict[str, list[str]],
+    awareness: list[dict[str, Any]],
+) -> str:
+    sample = data["sample"]
+    lines = [
+        "# Reddit Product and API-User Insights",
+        "",
+        f"Data available through **{sync_result['available_through']}** | "
+        f"{sample['posts']} unique discussions | Confidence: **{sample['confidence'].title()}**",
+        "",
+        "## 1. Executive Summary",
+        "",
+    ]
+    for index, opportunity in enumerate(opportunities[:6], start=1):
+        lines.append(
+            f"{index}. **{opportunity['topic']}** — {opportunity['signal']}. "
+            f"**Product response:** {opportunity['solution']}"
+        )
+
+    lines += [
+        "",
+        "## 2. Most Discussed Topics and Product Response",
+        "",
+        "| Topic | What the discussion indicates | Product thinking | Suggested solution |",
+        "|---|---|---|---|",
+    ]
+    for opportunity in opportunities[:7]:
+        lines.append(
+            f"| {opportunity['topic']} | {opportunity['signal']} | "
+            f"{opportunity['product_thinking']} | {opportunity['solution']} |"
+        )
+
+    lines += [
+        "",
+        "## 3. Most Requested API Capabilities",
+        "",
+        "| Capability | Demand signal | Nubra status | Recommended action |",
+        "|---|---:|---|---|",
+    ]
+    if data["feature_requests"]:
+        for feature in data["feature_requests"][:10]:
+            lines.append(
+                f"| {feature['feature']} | {feature['mentions']} explicit matches | "
+                f"{feature['status']} | {_feature_action(feature['status'])} |"
+            )
+    else:
+        lines.append("| No strong explicit match | Insufficient evidence | — | Continue collection and targeted discovery |")
+
+    retail_total = sum(item["retail"] for item in opportunities)
+    api_total = sum(item["api_algo"] for item in opportunities)
+    lines += [
+        "",
+        "## 4. Retail and API/Algo Discussion Split",
+        "",
+        "| Segment | Dominant needs | Product use |",
+        "|---|---|---|",
+        f"| Retail | Options interpretation, risk, education and portfolio context | Use analytics, calculators, guided education and clearer discovery to reduce decision friction. |",
+        f"| API/Algo | Reliability, historical data, automation, execution and developer onboarding | Use SDK/MCP workflows, observability, reference implementations and production-readiness guidance to improve activation. |",
+        "",
+        f"Across the prioritised themes, the observed split is **{retail_total} retail-topic matches** and **{api_total} API/algo-topic matches**.",
+        "",
+        "## 5. Webinar Opportunities",
+        "",
+        "| Webinar | Audience | Why it is relevant | Product outcome |",
+        "|---|---|---|---|",
+    ]
+    for webinar in webinars[:6]:
+        lines.append(
+            f"| {webinar['title']} | {webinar['audience']} | {webinar['why_now']} | {webinar['outcome']} |"
+        )
+
+    lines += ["", "## 6. Product Roadmap", "", "| Horizon | Recommended actions |", "|---|---|"]
+    for horizon in ("Now", "Next", "Later"):
+        actions = "<br>".join(f"• {item}" for item in roadmap[horizon]) or "Continue evidence collection."
+        lines.append(f"| {horizon} | {actions} |")
+
+    lines += ["", "## 7. Awareness, Documentation and Onboarding Gaps", ""]
+    if awareness:
+        for feature in awareness[:6]:
+            lines.append(
+                f"- **{feature['feature']}** is already available but still appears in user demand. "
+                "Improve feature discovery, task-based documentation, runnable examples and webinar coverage."
+            )
+    else:
+        lines.append("- No strong available-but-requested match was found in this analysis window.")
+
+    lines += [
+        "",
+        "## 8. Evidence and Confidence",
+        "",
+        f"The analysis covers {sample['direct_posts']} directly collected Reddit discussions and "
+        f"{sample['web_research_summaries']} reviewed research summaries. Reddit score is an engagement signal, "
+        "not a count of unique users or guaranteed product demand. Recommendations should be validated through "
+        "API usage data, support tickets and focused user interviews before roadmap commitment.",
+        "",
+    ]
+    return "\n".join(lines)
+
+
 def daily_insights(days: int = 30) -> dict[str, Any]:
     sync_result = sync(); data = analyze(days)
-    webinars = []
-    actionable_topics = [t for t in data["topics"] if t["topic"] != "Other market discussion"]
-    for t in actionable_topics[:6]:
-        webinars.append({"topic": t["topic"], "why_now": f"{t['mentions']} matched discussions; engagement {t['engagement']}",
-                         "audience": "API/algo" if t["api_algo"] >= t["retail"] else "Retail", "format": "Demo + Q&A"})
-    roadmap = []
-    for f in data["feature_requests"][:10]:
-        roadmap.append({**f, "recommended_action": _roadmap_action(f["status"])})
-    available_requests = [x for x in roadmap if x["status"] == "available"]
-    report = render_markdown(sync_result, data, webinars, roadmap, available_requests)
+    opportunities = build_product_opportunities(data)
+    webinars = [
+        {
+            "title": opportunity["webinar"],
+            "audience": "API/algo developers" if "API/algo" in opportunity["signal"] and opportunity["topic"] not in {"Options analytics & risk", "Investment education"} else "Retail and API users",
+            "why_now": opportunity["signal"],
+            "outcome": "Demonstrate relevant existing capabilities, improve activation and validate demand for the proposed product response.",
+        }
+        for opportunity in opportunities[:6]
+    ]
+    roadmap = build_roadmap(opportunities, data["feature_requests"])
+    available_requests = [x for x in data["feature_requests"][:10] if x["status"] == "available"]
+    report = render_leadership_report(sync_result, data, opportunities, webinars, roadmap, available_requests)
     report_dir = local_root() / "reports"; report_dir.mkdir(parents=True, exist_ok=True)
     path = report_dir / f"daily-insights-{dt.date.today().isoformat()}.md"; path.write_text(report, encoding="utf-8")
-    return {"sync": sync_result, "analysis": data, "webinars": webinars, "roadmap": roadmap,
+    return {"sync": sync_result, "analysis": data, "product_opportunities": opportunities,
+            "webinars": webinars, "roadmap": roadmap,
             "awareness_gaps": available_requests, "report_markdown": report, "report_path": str(path),
             "available_commands": ["/api-insights", "/retail-insights", "/feature-demand", "/webinar-plan", "/product-roadmap", "/awareness-gaps", "/strategy-builder", "/competitor-insights", "/evidence", "/compare-periods"]}
 
