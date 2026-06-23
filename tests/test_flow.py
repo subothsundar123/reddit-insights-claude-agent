@@ -56,8 +56,8 @@ class DailyFlowTests(unittest.TestCase):
         from reddit_insights_agent.server import daily_product_insights
         prompt = daily_product_insights(30)
         self.assertIn("existing capabilities users are missing", prompt.lower())
-        self.assertIn("what Nubra can improve now", prompt)
-        self.assertIn("directly in this chat", prompt)
+        self.assertIn("what nubra can improve now", prompt.lower())
+        self.assertIn("only in chat", prompt)
         self.assertNotIn("create_insights_pdf", prompt)
 
     def test_simple_analysis_prompts_are_available(self):
@@ -81,5 +81,10 @@ class DailyFlowTests(unittest.TestCase):
         self.assertTrue(all("chat" in text.lower() for text in prompts.values()))
         self.assertIn("Product, SDK, MCP and Support", prompts["improve_now"])
         self.assertIn("Already available", prompts["feature_gaps"])
+        self.assertIn("Underlying user need", prompts["feature_requests"])
+        self.assertIn("recent rate and share", prompts["trend_check"])
+        self.assertIn("Learning outcome", prompts["webinar_ideas"])
+        self.assertIn("Suggested success measure", prompts["roadmap"])
+        self.assertTrue(all("hands-on product manager" in text for text in prompts.values()))
 
 if __name__ == "__main__": unittest.main()

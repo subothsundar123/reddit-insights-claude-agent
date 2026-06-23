@@ -110,22 +110,35 @@ def compare_insight_periods(short_days: int = 7, long_days: int = 30) -> dict:
     """Compare recent signals with a longer baseline."""
     return compare_periods(short_days, long_days)
 
+
+def _product_manager_rules() -> str:
+    return (
+        "Work like a hands-on product manager reviewing real customer signals. Start from the user problem, "
+        "identify who experiences it, check Nubra's current coverage, and then recommend the smallest useful action. "
+        "Treat explicit requests, recurring discussion and Reddit engagement as different signals. Reddit score is not "
+        "unique demand. Combine aliases that describe the same need and avoid counting repeated records as separate needs. "
+        "Use the saved dump as the main evidence and add relevant web research only when it improves the recommendation. "
+        "Do not create separate source sections. Do not describe upcoming, partial or unverified work as publicly available. "
+        "Distinguish a real product gap from a discovery, documentation, onboarding or support problem. "
+        "Write in plain English like an internal note prepared by a product team member. Avoid generic phrases, filler, "
+        "methodology explanations and repeated conclusions. Use short paragraphs and useful tables. Show the answer only "
+        "in chat and do not create a report file."
+    )
+
+
 @mcp.prompt()
 def daily_product_insights(days: int = 30) -> str:
     """Reusable Claude Desktop prompt for the full daily product-insights workflow."""
     return (
-        f"Run the Reddit Product Insights connector's complete daily workflow for "
-        f"the last {days} days. Load all verified dumps currently saved in the shared local folder, then report "
-        "retail/API-algo hot topics, explicit feature demand, Nubra coverage, "
-        "webinar ideas, roadmap signals, existing capabilities users are missing, "
-        "what Nubra can improve now, "
-        "product opportunities and practical solutions. For every important signal, explain the product implication "
-        "and recommend a practical solution. Use the dump as the primary signal, enrich it with "
-        "current web research and product reasoning, reconcile it with the Nubra feature "
-        "catalog, and present one cohesive product-insights analysis rather than separate source sections. "
-        "Use the returned product opportunities and roadmap as the foundation. Use simple, clean English, keep it concise, "
-        "avoid repetition and do not add a separate strategy-builder section. Show the full report directly "
-        "in this chat using short text and clean tables. Do not create or attach a PDF or Markdown file."
+        f"Call run_daily_insights for the last {days} days and prepare the complete product review. "
+        "Use this exact structure: 1. Executive Summary; 2. Most Discussed Topics and Product Response; "
+        "3. Most Requested API Capabilities; 4. Retail and API/Algo Discussion Split; 5. Webinar Opportunities; "
+        "6. Product Roadmap; 7. Existing Capabilities Users Are Missing; 8. What Nubra Can Improve Now. "
+        "For each major topic, state the user problem, affected segment, signal in the data, product implication, "
+        "Nubra's current coverage and the recommended response. Keep the executive summary to the most important "
+        "decisions. Use tables for topics, requests, segments, webinars, roadmap and immediate improvements. "
+        "Do not repeat the same recommendation across sections and do not add a separate strategy-builder section. "
+        + _product_manager_rules()
     )
 
 
@@ -133,11 +146,14 @@ def daily_product_insights(days: int = 30) -> str:
 def feature_requests(days: int = 30) -> str:
     """Show the strongest feature requests found in the saved discussions."""
     return (
-        f"Use run_daily_insights for the last {days} days and show the strongest feature requests. "
-        "Separate explicit requests from general discussion. Use a table with Feature, User need, "
-        "Nubra status and Recommended action. Check the Nubra catalogue before suggesting anything. "
-        "If Nubra already has it, focus on visibility, examples or adoption instead of rebuilding it. "
-        "Keep the wording short and natural, like an internal product note. Show the answer only in chat."
+        f"Call run_daily_insights for the last {days} days and review the strongest feature requests. "
+        "First consolidate different phrases that refer to the same capability. Separate direct requests from pain points "
+        "that may need a different solution. Check the retail versus API/algo split and validate every leading request "
+        "against the Nubra feature catalogue. Prioritize using recurrence, user impact, engagement and product relevance; "
+        "do not rank by Reddit score alone. Start with three short product takeaways. Then use a table with Rank, Request, "
+        "Primary segment, Demand signal, Underlying user need, Nubra coverage, Product view and Recommended action. "
+        "End with the three requests worth validating next and state what should be learned from users before committing. "
+        + _product_manager_rules()
     )
 
 
@@ -145,11 +161,14 @@ def feature_requests(days: int = 30) -> str:
 def feature_gaps(days: int = 30) -> str:
     """Compare user demand with Nubra's existing feature coverage."""
     return (
-        f"Use run_daily_insights for the last {days} days and compare the requested capabilities with "
-        "the Nubra feature catalogue. Group them as Already available, Partly covered, Upcoming and Missing. "
-        "For each item, explain the remaining user need and the next practical action. Include a separate short "
-        "table for existing capabilities users are missing. Do not treat upcoming or unverified work as publicly available. "
-        "Write like a product team member and show the answer only in chat."
+        f"Call run_daily_insights for the last {days} days and compare user demand with the Nubra feature catalogue. "
+        "Classify each need as Already available, Partly covered, Upcoming, Missing or Needs verification. For every item, "
+        "separate the requested capability from the remaining user problem. Decide whether the real gap is product scope, "
+        "access, documentation, examples, discoverability, onboarding or support. Use a table with Capability, User need, "
+        "Primary segment, Nubra status, What is still missing, Gap type and Recommended action. Then add a short section "
+        "called Existing Capabilities Users Are Missing, with the specific visibility or adoption fix for each feature. "
+        "Finish with the top three genuine product gaps and the top three adoption gaps so they are not mixed together. "
+        + _product_manager_rules()
     )
 
 
@@ -157,10 +176,13 @@ def feature_gaps(days: int = 30) -> str:
 def trend_check(short_days: int = 7, long_days: int = 30) -> str:
     """Compare recent discussion signals with a longer period."""
     return (
-        f"Use compare_insight_periods with {short_days} days and {long_days} days. Show what is rising, "
-        "what is stable and what is declining across retail and API/algo discussions. Focus on meaningful changes, "
-        "not raw Reddit score alone. Use a compact table with Topic, Direction, What changed and Product response. "
-        "Keep the conclusions practical and show the answer only in chat."
+        f"Call compare_insight_periods with {short_days} days and {long_days} days. Compare the recent rate and share of "
+        "discussion with the longer baseline; do not compare raw totals from unequal windows as if they were equivalent. "
+        "Separate retail and API/algo movement and flag genuinely new themes. Use Rising, Stable, Declining or New only "
+        "when the evidence supports the label. Start with the three changes a product manager should notice. Then use a "
+        "table with Topic, Segment, Direction, What changed, Likely user reason, Product implication and Recommended response. "
+        "End with Watch next week: no more than three signals and what evidence would confirm that each trend is real. "
+        + _product_manager_rules()
     )
 
 
@@ -168,10 +190,14 @@ def trend_check(short_days: int = 7, long_days: int = 30) -> str:
 def improve_now(days: int = 30) -> str:
     """Find practical improvements Nubra can make now."""
     return (
-        f"Use run_daily_insights for the last {days} days and prepare a section called What Nubra Can Improve Now. "
-        "Give short, practical improvements across Product, SDK, MCP and Support. Base each action on a recurring "
-        "user need and check whether Nubra already has relevant coverage. Use a table with Area, User problem, "
-        "Improvement and Expected outcome. Avoid broad phrases and long explanations. Show the answer only in chat."
+        f"Call run_daily_insights for the last {days} days and prepare What Nubra Can Improve Now. Review Product, SDK, "
+        "MCP and Support separately, but recommend only actions supported by recurring user needs. For each problem, check "
+        "whether an existing Nubra capability can solve it before proposing new build work. Prefer small changes that reduce "
+        "friction quickly: better placement, clearer coverage, calculators, examples, reusable workflows, guided MCP actions "
+        "or support routing. Use a table with Area, User problem, Current coverage, Improvement, Why now, Expected user "
+        "outcome and Relative effort (Small, Medium or Large). Finish with the best three quick wins and explain why each "
+        "should be done first. Do not call a large new product feature a quick win. "
+        + _product_manager_rules()
     )
 
 
@@ -179,10 +205,13 @@ def improve_now(days: int = 30) -> str:
 def webinar_ideas(days: int = 30) -> str:
     """Turn repeated user questions into useful webinar ideas."""
     return (
-        f"Use run_daily_insights for the last {days} days and suggest webinar ideas from repeated questions, "
-        "confusion and feature demand. Use a table with Topic, Audience, User question, What to demonstrate and "
-        "Relevant Nubra capability. Prefer topics that can educate users and improve product adoption. "
-        "Do not invent demand that is not present in the data. Show the answer only in chat."
+        f"Call run_daily_insights for the last {days} days and turn repeated questions, confusion and feature demand into "
+        "webinar ideas. Choose topics that solve a real learning problem and can naturally demonstrate relevant Nubra "
+        "capabilities. Avoid broad market commentary unless it leads to a useful product workflow. Use a table with Priority, "
+        "Webinar title, Audience, User question, Learning outcome, Live demonstration, Relevant Nubra capability and Product "
+        "outcome. After the table, give a practical outline for the top webinar: opening problem, three teaching sections, "
+        "demo, questions and call to action. Suggest one adoption metric to watch after each webinar. "
+        + _product_manager_rules()
     )
 
 
@@ -190,10 +219,14 @@ def webinar_ideas(days: int = 30) -> str:
 def roadmap(days: int = 30) -> str:
     """Turn current discussion signals into a product roadmap view."""
     return (
-        f"Use run_daily_insights for the last {days} days and prepare a simple Now, Next and Later roadmap. "
-        "Consider recurring demand, user impact, Nubra's current coverage and whether the problem is product, "
-        "SDK, MCP, support or discovery. Do not add an available feature as new roadmap work; recommend adoption "
-        "or visibility improvements instead. Use one clean table and keep the reasoning direct. Show the answer only in chat."
+        f"Call run_daily_insights for the last {days} days and prepare a Now, Next and Later roadmap. Evaluate each signal "
+        "using recurrence, affected segment, user impact, Nubra coverage, likely effort, dependencies and whether more "
+        "discovery is needed. Separate new product work from adoption, documentation and support improvements. Do not place "
+        "an already available feature on the build roadmap. Use a table with Horizon, User problem, Recommended action, "
+        "Why this horizon, Nubra dependency, Expected outcome and Suggested success measure. Keep Now limited to work that "
+        "can start with existing knowledge; use Next for validated larger work; use Later for uncertain or dependency-heavy "
+        "ideas. Finish with Decisions needed, listing assumptions that require product or engineering confirmation. "
+        + _product_manager_rules()
     )
 
 def main() -> None:

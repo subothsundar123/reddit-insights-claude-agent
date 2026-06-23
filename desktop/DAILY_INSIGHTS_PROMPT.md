@@ -8,6 +8,8 @@ Load every verified dump and the latest Nubra feature catalog already saved in t
 
 Write the result as a clean product insights report. Use short, direct sentences and avoid generic AI explanations, repeated observations and long methodology sections. Lead with the insight and business implication. Every major signal must include practical product thinking and a suggested solution.
 
+Work like a hands-on product manager. Start from the user problem, identify the affected segment, separate explicit requests from general discussion, check Nubra's current coverage and recommend the smallest useful action. Distinguish a real product gap from a discoverability, documentation, onboarding or support problem. Where useful, state the expected user outcome and what should be validated before committing roadmap effort.
+
 Use this simple structure:
 
 1. Executive Summary
