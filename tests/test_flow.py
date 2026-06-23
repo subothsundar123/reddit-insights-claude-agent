@@ -19,10 +19,12 @@ class DailyFlowTests(unittest.TestCase):
         from reddit_insights_agent.core import daily_insights
         first = daily_insights(30)
         second = daily_insights(30)
-        self.assertEqual(first["sync"]["new_dumps"], ["2026-06-22"])
+        self.assertEqual(first["sync"]["new_dumps"], ["2026-06-22", "2026-06-23"])
         self.assertEqual(second["sync"]["new_dumps"], [])
         self.assertEqual(first["sync"]["catalog_version"], "1.0.0")
-        self.assertEqual(first["analysis"]["sample"]["posts"], 276)
+        self.assertEqual(first["analysis"]["sample"]["posts"], 318)
+        self.assertEqual(first["analysis"]["sample"]["direct_posts"], 272)
+        self.assertEqual(first["analysis"]["sample"]["web_research_summaries"], 46)
         self.assertIn("/feature-demand", first["available_commands"])
 
     def test_feature_lookup(self):

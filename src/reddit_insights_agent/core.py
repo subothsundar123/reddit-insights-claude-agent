@@ -120,7 +120,8 @@ def connect(root: pathlib.Path | None = None) -> sqlite3.Connection:
     CREATE TABLE IF NOT EXISTS dumps(collection_date TEXT PRIMARY KEY, imported_at TEXT);
     CREATE TABLE IF NOT EXISTS posts(
       id TEXT PRIMARY KEY, collection_date TEXT, subreddit TEXT, segment TEXT, title TEXT, body TEXT,
-      flair TEXT, score INTEGER, num_comments INTEGER, created_utc REAL, permalink TEXT);
+      flair TEXT, score INTEGER, num_comments INTEGER, created_utc REAL, permalink TEXT,
+      source_method TEXT, evidence_quality TEXT);
     CREATE TABLE IF NOT EXISTS comments(
       id TEXT, post_id TEXT, collection_date TEXT, body TEXT, score INTEGER, created_utc REAL,
       PRIMARY KEY(id, post_id));
@@ -129,6 +130,11 @@ def connect(root: pathlib.Path | None = None) -> sqlite3.Connection:
       surfaces TEXT, aliases TEXT, notes TEXT, source TEXT);
     CREATE VIRTUAL TABLE IF NOT EXISTS evidence_fts USING fts5(kind, item_id, title, body, subreddit, collection_date);
     """)
+    columns = {row[1] for row in db.execute("PRAGMA table_info(posts)")}
+    if "source_method" not in columns:
+        db.execute("ALTER TABLE posts ADD COLUMN source_method TEXT")
+    if "evidence_quality" not in columns:
+        db.execute("ALTER TABLE posts ADD COLUMN evidence_quality TEXT")
     return db
 
 
@@ -148,10 +154,15 @@ def import_local(root: pathlib.Path | None = None) -> None:
         with gzip.open(folder / "posts.jsonl.gz", "rt", encoding="utf-8") as f:
             for line in f:
                 p = json.loads(line); text = f"{p.get('title','')} {p.get('body','')}"
-                db.execute("INSERT OR REPLACE INTO posts VALUES(?,?,?,?,?,?,?,?,?,?,?)", (
+                db.execute("""INSERT OR REPLACE INTO posts(
+                    id, collection_date, subreddit, segment, title, body, flair, score,
+                    num_comments, created_utc, permalink, source_method, evidence_quality
+                ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""", (
                     p["id"], date, p.get("subreddit"), _segment(p.get("subreddit", ""), text),
                     p.get("title"), p.get("body"), p.get("flair"), p.get("score", 0),
-                    p.get("num_comments", 0), p.get("created_utc"), p.get("permalink")))
+                    p.get("num_comments", 0), p.get("created_utc"), p.get("permalink"),
+                    p.get("source_method") or "reddit_collector",
+                    p.get("evidence_quality") or "direct_collection"))
                 db.execute("INSERT INTO evidence_fts VALUES(?,?,?,?,?,?)", ("post", p["id"], p.get("title"), p.get("body"), p.get("subreddit"), date))
         with gzip.open(folder / "comments.jsonl.gz", "rt", encoding="utf-8") as f:
             for line in f:
@@ -239,8 +250,17 @@ def analyze(days: int | None = 30) -> dict[str, Any]:
     requested = sorted(feature_rows.values(), key=lambda x: (x["mentions"], x["engagement"]), reverse=True)
     for row in topics + requested: row["engagement"] = round(row["engagement"], 2)
     top_evidence = [{"title": p["title"], "segment": p["segment"], "score": p["score"], "comments": p["num_comments"], "url": p["permalink"]} for _, p in sorted(evidence, key=lambda item: item[0], reverse=True)[:15]]
-    confidence = "high" if len(posts) >= 200 else "medium" if len(posts) >= 50 else "low"
-    return {"period_days": days, "sample": {"posts": len(posts), "confidence": confidence}, "topics": topics[:12],
+    source_counts = Counter(p.get("source_method") or "unknown" for p in posts)
+    direct_count = sum(v for k, v in source_counts.items() if k != "web_search_review")
+    confidence = "high" if direct_count >= 200 else "medium" if direct_count >= 50 else "low"
+    return {"period_days": days, "sample": {
+                "posts": len(posts), "direct_posts": direct_count,
+                "web_research_summaries": source_counts.get("web_search_review", 0),
+                "source_methods": dict(source_counts), "confidence": confidence
+            }, "methodology_note": (
+                "Web-search research summaries have unknown Reddit vote metrics. "
+                "They increase thematic coverage and mention frequency but add zero engagement weight."
+            ), "topics": topics[:12],
             "feature_requests": requested[:15], "top_evidence": top_evidence}
 
 
