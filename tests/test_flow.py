@@ -60,4 +60,40 @@ class DailyFlowTests(unittest.TestCase):
         self.assertEqual(desktop["sync"]["available_through"], "2026-06-23")
         self.assertEqual(desktop["analysis"]["sample"]["posts"], 318)
 
+    def test_pdf_is_created_without_markdown_file(self):
+        from reddit_insights_agent.server import create_insights_pdf
+        result = create_insights_pdf(
+            executive_summary=["API reliability needs a visible product response."],
+            topics=[{
+                "topic": "API reliability",
+                "discussion": "Users discuss reconnect behaviour.",
+                "product_thinking": "Reliability builds trust.",
+                "solution": "Publish a health dashboard.",
+            }],
+            api_capabilities=[{
+                "capability": "WebSocket monitoring",
+                "demand": "Repeated reliability questions",
+                "nubra_status": "Proposed",
+                "action": "Add status visibility and SDK examples.",
+            }],
+            segment_split=[{
+                "segment": "API/Algo",
+                "needs": "Reliability and recovery",
+                "product_use": "Improve activation and trust",
+            }],
+            webinars=[{
+                "title": "Reliable WebSockets",
+                "audience": "API developers",
+                "why": "Recurring reliability questions",
+                "outcome": "Improve adoption",
+            }],
+            roadmap={"Now": ["Publish status guidance"], "Next": ["Add analytics"], "Later": []},
+            awareness_gaps=["Improve WebSocket documentation."],
+        )
+        pdf_path = pathlib.Path(result.structuredContent["pdf_path"])
+        self.assertTrue(pdf_path.exists())
+        self.assertEqual(pdf_path.suffix.lower(), ".pdf")
+        self.assertTrue(pdf_path.read_bytes().startswith(b"%PDF"))
+        self.assertFalse(list((self.temp / "reports").glob("*.md")))
+
 if __name__ == "__main__": unittest.main()

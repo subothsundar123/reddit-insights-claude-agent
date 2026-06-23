@@ -582,11 +582,9 @@ def daily_insights(days: int = 30) -> dict[str, Any]:
     roadmap = build_roadmap(opportunities, data["feature_requests"])
     available_requests = [x for x in data["feature_requests"][:10] if x["status"] == "available"]
     report = render_insights_report(sync_result, data, opportunities, webinars, roadmap, available_requests)
-    report_dir = local_root() / "reports"; report_dir.mkdir(parents=True, exist_ok=True)
-    path = report_dir / f"daily-insights-{dt.date.today().isoformat()}.md"; path.write_text(report, encoding="utf-8")
     return {"sync": sync_result, "analysis": data, "product_opportunities": opportunities,
             "webinars": webinars, "roadmap": roadmap,
-            "awareness_gaps": available_requests, "report_markdown": report, "report_path": str(path),
+            "awareness_gaps": available_requests, "report_markdown": report,
             "available_commands": ["/api-insights", "/retail-insights", "/feature-demand", "/webinar-plan", "/product-roadmap", "/awareness-gaps", "/strategy-builder", "/competitor-insights", "/evidence", "/compare-periods"]}
 
 

@@ -23,3 +23,5 @@ For the topic and feature tables, include what users are discussing, why it matt
 Do not treat Reddit score as unique demand. Separate explicit requests from general discussion and qualify internal or upcoming Nubra capabilities.
 
 Use simple, clean English. Keep the report product-focused and solution-oriented. Include useful source links naturally where relevant. Do not create a separate strategy-builder section; incorporate related signals into feature and roadmap recommendations.
+
+After completing the analysis and web research, call `create_insights_pdf` with the finished sections. Return the PDF as the final report. Do not return or save a Markdown report.
