@@ -34,6 +34,11 @@ class DailyFlowTests(unittest.TestCase):
         self.assertGreaterEqual(len(first["product_opportunities"]), 5)
         self.assertTrue(all(item["solution"] for item in first["product_opportunities"]))
         self.assertEqual(set(first["roadmap"]), {"Now", "Next", "Later"})
+        self.assertIn("emerging_topic_candidates", first["analysis"])
+        from reddit_insights_agent.core import TOPICS
+        self.assertIn("Fundamental data & research", TOPICS)
+        self.assertIn("Scanners, indicators & alerts", TOPICS)
+        self.assertIn("SDK, MCP & integrations", TOPICS)
 
     def test_feature_lookup(self):
         from reddit_insights_agent.core import daily_insights, feature_lookup
@@ -65,6 +70,7 @@ class DailyFlowTests(unittest.TestCase):
             feature_gaps,
             feature_requests,
             improve_now,
+            new_ideas,
             roadmap,
             trend_check,
             webinar_ideas,
@@ -74,10 +80,11 @@ class DailyFlowTests(unittest.TestCase):
             "feature_gaps": feature_gaps(30),
             "trend_check": trend_check(7, 30),
             "improve_now": improve_now(30),
+            "new_ideas": new_ideas(30),
             "webinar_ideas": webinar_ideas(30),
             "roadmap": roadmap(30),
         }
-        self.assertEqual(len(prompts), 6)
+        self.assertEqual(len(prompts), 7)
         self.assertTrue(all("chat" in text.lower() for text in prompts.values()))
         self.assertIn("Product, SDK, MCP and Support", prompts["improve_now"])
         self.assertIn("Already available", prompts["feature_gaps"])
@@ -85,6 +92,7 @@ class DailyFlowTests(unittest.TestCase):
         self.assertIn("recent rate and share", prompts["trend_check"])
         self.assertIn("Learning outcome", prompts["webinar_ideas"])
         self.assertIn("Suggested success measure", prompts["roadmap"])
+        self.assertIn("emerging_topic_candidates", prompts["new_ideas"])
         self.assertTrue(all("Start directly with the strongest insights" in text for text in prompts.values()))
         self.assertTrue(all("do not return a plan" in text for text in prompts.values()))
 

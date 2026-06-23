@@ -241,6 +241,23 @@ TOPICS = {
     "Developer onboarding": ["documentation", "docs", "example", "authentication", "totp", "static ip", "support"],
     "Portfolio & P&L analytics": ["p&l", "pnl", "portfolio", "tradebook", "charges", "brokerage"],
     "Investment education": ["learn", "beginner", "how to", "education", "knowledge"],
+    "Market data & data quality": ["market data", "live data", "real-time data", "realtime data", "data feed", "data quality", "stale data", "missing candle", "ohlc", "quote api"],
+    "Fundamental data & research": ["fundamental", "financial statement", "balance sheet", "earnings data", "valuation", "pe ratio", "financials", "research api"],
+    "Scanners, indicators & alerts": ["scanner", "screener", "indicator", "rsi", "macd", "alert", "notification", "watchlist"],
+    "Paper trading & UAT": ["paper trading", "paper trade", "sandbox", "uat", "test environment", "mock trading", "virtual trading"],
+    "Funds, margin & settlement": ["funds", "collateral", "pledge", "settlement", "margin shortfall", "buying power", "cash balance"],
+    "SDK, MCP & integrations": ["sdk", "python library", "javascript library", "webhook", "mcp", "ai integration", "open source", "integration"],
+    "Security, sessions & access": ["2fa", "totp", "static ip", "secondary ip", "multi-session", "session", "login flow", "rate limit"],
+    "Pricing, brokerage & taxes": ["brokerage", "charges", "pricing", "subscription", "transaction cost", "stt", "gst", "stamp duty", "tax calculator"],
+    "Instrument & reference data": ["instrument master", "symbol mapping", "instrument token", "contract master", "lot size", "strike price", "expiry data", "exchange segment"],
+    "Platform usability & support": ["user interface", "mobile app", "dashboard", "feature discovery", "chatbot", "support ticket", "customer support", "navigation"],
+}
+
+PRODUCT_DISCOVERY_TERMS = {
+    "api", "sdk", "mcp", "data", "feed", "websocket", "order", "execution", "margin",
+    "portfolio", "analytics", "scanner", "screener", "indicator", "alert", "integration",
+    "automation", "backtest", "broker", "platform", "dashboard", "documentation", "support",
+    "login", "session", "security", "research", "fundamental", "option", "risk", "pricing",
 }
 
 PRODUCT_PLAYBOOK = {
@@ -306,6 +323,76 @@ PRODUCT_PLAYBOOK = {
         "solution": "Use MCP and the support assistant to guide users to the right API, example and risk concept. Convert recurring questions into short webinars and runnable notebooks.",
         "webinar": "A practical starting path for retail algo and API users",
         "horizon": "Now"
+    },
+    "Market data & data quality": {
+        "product_thinking": "Data coverage, timeliness and consistency determine whether users can trust downstream analytics and automation.",
+        "nubra_context": "Core market-data APIs are available; clearer coverage, data-quality guidance and derived analytics can improve adoption.",
+        "solution": "Publish coverage and quality guidance by asset and interval, document adjustments and known limitations, and add data-validation examples to the SDK.",
+        "webinar": "Building reliable workflows with market data APIs",
+        "horizon": "Now"
+    },
+    "Fundamental data & research": {
+        "product_thinking": "Fundamental data becomes more useful when it supports clear research workflows rather than remaining a collection of raw fields.",
+        "nubra_context": "Fundamental data is exposed through the SDK and can be used by Nubra MCP for persona-based research guidance.",
+        "solution": "Add documented research examples and MCP workflows for equity, derivatives and fundamental-research personas, with source and update-frequency clarity.",
+        "webinar": "Building fundamental research workflows with Nubra data",
+        "horizon": "Now"
+    },
+    "Scanners, indicators & alerts": {
+        "product_thinking": "Users want to move from raw market data to timely discovery and action without rebuilding common calculations themselves.",
+        "nubra_context": "Basic data APIs provide inputs; scanner and indicator workflows can be added through the SDK and MCP.",
+        "solution": "Provide reusable scanner, indicator and alert building blocks with documented formulas, scheduling patterns and instrument filters.",
+        "webinar": "Creating scanners, indicators and alerts with Nubra APIs",
+        "horizon": "Next"
+    },
+    "Paper trading & UAT": {
+        "product_thinking": "Safe forward testing reduces the jump from backtest results to live execution and helps users validate operational behaviour.",
+        "nubra_context": "Nubra UAT already supports testing; the main opportunity is clearer positioning, onboarding and examples.",
+        "solution": "Market Nubra UAT as the forward-testing environment and provide end-to-end examples that move from backtest to UAT validation.",
+        "webinar": "From backtest to forward testing with Nubra UAT",
+        "horizon": "Now"
+    },
+    "Funds, margin & settlement": {
+        "product_thinking": "Users need cost, margin and settlement clarity before execution, not after an order is placed.",
+        "nubra_context": "Funds and margin capabilities exist; calculators and clearer workflow guidance can make them easier to use.",
+        "solution": "Expose margin, payoff and charges calculators with settlement guidance and pre-trade examples across product, SDK and MCP.",
+        "webinar": "Understanding margin, charges and settlement before execution",
+        "horizon": "Now"
+    },
+    "SDK, MCP & integrations": {
+        "product_thinking": "Reusable integrations reduce implementation time and help users turn available APIs into complete workflows.",
+        "nubra_context": "Nubra SDK, NubraOSS and Nubra MCP provide a base for guided and code-based integrations.",
+        "solution": "Package task-based SDK examples and MCP workflows for research, data retrieval, testing and controlled execution, with clear boundaries and error handling.",
+        "webinar": "Building complete workflows with Nubra SDK and MCP",
+        "horizon": "Now"
+    },
+    "Security, sessions & access": {
+        "product_thinking": "Secure automation must remain reliable across login, IP and session-management requirements.",
+        "nubra_context": "Automated TOTP, primary and secondary IP support and multi-session support are available.",
+        "solution": "Document the automated login flow and session patterns, and consider exposing the existing static-IP update capability as a supported endpoint.",
+        "webinar": "Secure and reliable API access with TOTP, IPs and sessions",
+        "horizon": "Now"
+    },
+    "Pricing, brokerage & taxes": {
+        "product_thinking": "Cost transparency helps users evaluate strategies realistically and understand the difference between gross and net outcomes.",
+        "nubra_context": "Order and trade data provide the base inputs for charges and P&L analysis.",
+        "solution": "Provide brokerage, statutory-charge and net-P&L calculators through product interfaces and SDK utilities.",
+        "webinar": "Calculating the true cost of an API-driven strategy",
+        "horizon": "Next"
+    },
+    "Instrument & reference data": {
+        "product_thinking": "Stable instrument identifiers and contract metadata are foundational for reliable market-data and order workflows.",
+        "nubra_context": "Instrument data is available as part of the data stack; discovery and lifecycle examples can be improved.",
+        "solution": "Publish instrument-master examples for symbol mapping, expiry changes, lot sizes and contract rollovers, with validation utilities in the SDK.",
+        "webinar": "Working reliably with instrument and contract master data",
+        "horizon": "Now"
+    },
+    "Platform usability & support": {
+        "product_thinking": "Users should reach the right capability, API and example without searching across disconnected product surfaces.",
+        "nubra_context": "Documentation and support surfaces exist; guided discovery can be improved.",
+        "solution": "Improve navigation and search, and use an AI support assistant to route users to the relevant product section, API and runnable example.",
+        "webinar": "Finding and using the right Nubra capability faster",
+        "horizon": "Now"
     }
 }
 REQUEST = re.compile(r"\b(need|want|wish|request|missing|looking for|would like|should have|feature|support for|can we|is there an api)\b", re.I)
@@ -370,21 +457,34 @@ def analyze(days: int | None = 30) -> dict[str, Any]:
     db.close()
     topic_rows: dict[str, dict[str, Any]] = {}
     feature_rows: dict[str, dict[str, Any]] = {}
+    emerging_candidates: list[dict[str, Any]] = []
     evidence = []
     for p in posts:
         text = f"{p['title']} {p['body']}".lower(); weight = _engagement(p["score"], p["num_comments"])
         technical_only = {
             "API reliability & WebSockets",
-            "Historical data & backtesting",
-            "Strategy building & automation",
-            "Order execution & OMS",
             "Developer onboarding",
+            "SDK, MCP & integrations",
+            "Security, sessions & access",
         }
         matched_topics = [
             name for name, keys in TOPICS.items()
             if (name not in technical_only or p["segment"] == "api_algo")
             and any(k in text for k in keys)
-        ] or ["Other market discussion"]
+        ]
+        if not matched_topics:
+            if any(term in text for term in PRODUCT_DISCOVERY_TERMS):
+                emerging_candidates.append({
+                    "title": p["title"],
+                    "excerpt": (p["body"] or "")[:280],
+                    "segment": p["segment"],
+                    "subreddit": p["subreddit"],
+                    "engagement": weight,
+                    "score": p["score"],
+                    "comments": p["num_comments"],
+                    "url": p["permalink"],
+                })
+            matched_topics = ["Other market discussion"]
         for name in matched_topics:
             item = topic_rows.setdefault(name, {"topic": name, "mentions": 0, "engagement": 0.0, "retail": 0, "api_algo": 0, "examples": []})
             item["mentions"] += 1; item["engagement"] += weight; item[p["segment"]] += 1
@@ -402,6 +502,11 @@ def analyze(days: int | None = 30) -> dict[str, Any]:
         evidence.append((weight, p))
     topics = sorted(topic_rows.values(), key=lambda x: (x["mentions"], x["engagement"]), reverse=True)
     requested = sorted(feature_rows.values(), key=lambda x: (x["mentions"], x["engagement"]), reverse=True)
+    emerging_candidates = sorted(
+        emerging_candidates,
+        key=lambda item: (item["engagement"], item["comments"]),
+        reverse=True,
+    )[:12]
     for row in topics + requested: row["engagement"] = round(row["engagement"], 2)
     top_evidence = [{"title": p["title"], "segment": p["segment"], "score": p["score"], "comments": p["num_comments"], "url": p["permalink"]} for _, p in sorted(evidence, key=lambda item: item[0], reverse=True)[:15]]
     source_counts = Counter(p.get("source_method") or "unknown" for p in posts)
@@ -414,8 +519,9 @@ def analyze(days: int | None = 30) -> dict[str, Any]:
             }, "methodology_note": (
                 "Web-search research summaries have unknown Reddit vote metrics. "
                 "They increase thematic coverage and mention frequency but add zero engagement weight."
-            ), "topics": topics[:12],
-            "feature_requests": requested[:15], "top_evidence": top_evidence}
+            ), "topics": topics[:20],
+            "feature_requests": requested[:15], "emerging_topic_candidates": emerging_candidates,
+            "top_evidence": top_evidence}
 
 
 def _roadmap_action(status: str) -> str:
@@ -454,7 +560,7 @@ def build_product_opportunities(data: dict[str, Any]) -> list[dict[str, Any]]:
             "webinar": play["webinar"],
             "horizon": play["horizon"],
         })
-    return opportunities[:8]
+    return opportunities[:12]
 
 
 def build_roadmap(opportunities: list[dict[str, Any]], feature_requests: list[dict[str, Any]]) -> dict[str, list[str]]:

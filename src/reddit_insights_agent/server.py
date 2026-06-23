@@ -42,15 +42,15 @@ def run_daily_insights(days: int = 30) -> dict:
     analysis = result["analysis"]
     compact_topics = [
         {key: row[key] for key in ("topic", "mentions", "engagement", "retail", "api_algo")}
-        for row in analysis["topics"][:10]
-    ]
+        for row in analysis["topics"] if row["topic"] != "Other market discussion"
+    ][:15]
     compact_features = [
         {key: row[key] for key in ("feature", "status", "mentions", "engagement")}
         for row in analysis["feature_requests"][:12]
     ]
     compact_opportunities = [
         {key: row[key] for key in ("topic", "signal", "priority", "product_thinking", "nubra_context", "solution", "horizon")}
-        for row in result["product_opportunities"][:8]
+        for row in result["product_opportunities"][:12]
     ]
     compact_awareness = [
         {key: row[key] for key in ("feature", "status", "mentions")}
@@ -67,6 +67,7 @@ def run_daily_insights(days: int = 30) -> dict:
             "product_opportunities": compact_opportunities[:5],
             "current_roadmap_actions": result["roadmap"].get("Now", [])[:6],
         },
+        "emerging_topic_candidates": analysis.get("emerging_topic_candidates", [])[:10],
         "top_evidence": analysis["top_evidence"][:10],
         "analysis_policy": policy,
         "report_contract": {
@@ -80,6 +81,7 @@ def run_daily_insights(days: int = 30) -> dict:
                 "Product Roadmap",
                 "Existing Capabilities Users Are Missing",
                 "What Nubra Can Improve Now",
+                "Emerging Topics and New Ideas",
             ],
             "rules": [
                 "Lead with outcomes, not methodology",
@@ -121,6 +123,10 @@ def _insight_rules() -> str:
         "Use the saved dump as the main evidence and add relevant web research only when it improves the recommendation. "
         "Do not create separate source sections. Do not describe upcoming, partial or unverified work as publicly available. "
         "Distinguish a real product gap from a discovery, documentation, onboarding or support problem. "
+        "Do not limit the analysis to predefined topics. Review emerging_topic_candidates and surface a new theme when "
+        "multiple discussions point to a Nubra-relevant problem or opportunity. Do not force new signals into an existing "
+        "category, and do not promote an isolated post as a trend. Consider opportunities across product, APIs, market data, "
+        "analytics, SDK, MCP, automation, execution, risk, research, onboarding, pricing, support and platform usability. "
         "Always provide findings and recommendations; do not return a plan for doing the analysis. Use plain English and "
         "avoid generic phrases, filler, methodology explanations and repeated conclusions. Use short paragraphs and useful "
         "tables. Show the answer only in chat and do not create a report file."
@@ -134,7 +140,8 @@ def daily_product_insights(days: int = 30) -> str:
         f"Call run_daily_insights for the last {days} days and prepare the complete product review. "
         "Use this exact structure: 1. Executive Summary; 2. Most Discussed Topics and Product Response; "
         "3. Most Requested API Capabilities; 4. Retail and API/Algo Discussion Split; 5. Webinar Opportunities; "
-        "6. Product Roadmap; 7. Existing Capabilities Users Are Missing; 8. What Nubra Can Improve Now. "
+        "6. Product Roadmap; 7. Existing Capabilities Users Are Missing; 8. What Nubra Can Improve Now; "
+        "9. Emerging Topics and New Ideas. "
         "For each major topic, state the user problem, affected segment, signal in the data, product implication, "
         "Nubra's current coverage and the recommended response. Keep the executive summary to the most important "
         "decisions. Use tables for topics, requests, segments, webinars, roadmap and immediate improvements. "
@@ -227,6 +234,20 @@ def roadmap(days: int = 30) -> str:
         "Why this horizon, Nubra dependency, Expected outcome and Suggested success measure. Keep Now limited to work that "
         "can start with existing knowledge; use Next for validated larger work; use Later for uncertain or dependency-heavy "
         "ideas. Finish with Decisions needed, listing assumptions that require product or engineering confirmation. "
+        + _insight_rules()
+    )
+
+
+@mcp.prompt()
+def new_ideas(days: int = 30) -> str:
+    """Find new Nubra-relevant topics and opportunities outside the usual categories."""
+    return (
+        f"Call run_daily_insights for the last {days} days and review both the known topics and "
+        "emerging_topic_candidates. Find recurring user problems, workflows or ideas that are not already represented "
+        "well by the standard topic list. Group related discussions into a clear new theme only when more than one signal "
+        "supports it. Use a table with Emerging topic, Supporting signal, Affected segment, Why it matters for Nubra, "
+        "Possible opportunity and What to validate next. Separate genuinely new product ideas from extensions to existing "
+        "features. End with the two strongest ideas worth further discovery; return fewer if the evidence is weak. "
         + _insight_rules()
     )
 

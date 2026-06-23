@@ -22,7 +22,7 @@ The full copy-ready prompt is available in `desktop/DAILY_INSIGHTS_PROMPT.md`.
 
 ### Focused connector prompts
 
-Claude Desktop also exposes six short prompts for focused work:
+Claude Desktop also exposes seven short prompts for focused work:
 
 - `feature_requests` - strongest user requests and the right product response
 - `feature_gaps` - requested capabilities compared with Nubra's current coverage
@@ -30,8 +30,9 @@ Claude Desktop also exposes six short prompts for focused work:
 - `improve_now` - practical improvements across product, SDK, MCP and support
 - `webinar_ideas` - webinar topics drawn from repeated questions and demand
 - `roadmap` - a simple Now, Next and Later product view
+- `new_ideas` - emerging Nubra-relevant topics outside the standard categories
 
-These prompts use the same locally stored dumps and Nubra feature catalogue. Each prompt starts with the strongest insights, identifies the user problem, separates demand signals, checks current coverage, distinguishes product gaps from adoption gaps and recommends the smallest useful action. They return concise text and tables directly in chat without describing the analysis process.
+These prompts use the same locally stored dumps and Nubra feature catalogue. Each prompt starts with the strongest insights, identifies the user problem, separates demand signals, checks current coverage, distinguishes product gaps from adoption gaps and recommends the smallest useful action. The engine also returns relevant unclassified discussions so new Nubra topics and ideas are not lost when they fall outside the standard categories. Outputs appear as concise text and tables directly in chat without describing the analysis process.
 
 ## Shared-folder workflow
 
