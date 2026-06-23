@@ -15,7 +15,25 @@ if (-not (Test-Path -LiteralPath $python)) {
 & $python -m pip install --upgrade pip
 & $python -m pip install -e $root
 
-$claudeDirectory = Join-Path $env:APPDATA "Claude"
+$classicClaudeDirectory = Join-Path $env:APPDATA "Claude"
+$storeClaudeDirectory = Get-ChildItem -Path (Join-Path $env:LOCALAPPDATA "Packages") `
+  -Directory -Filter "Claude_*" -ErrorAction SilentlyContinue |
+  ForEach-Object {
+    Join-Path $_.FullName "LocalCache\Roaming\Claude"
+  } |
+  Where-Object {
+    Test-Path -LiteralPath (Join-Path $_ "claude_desktop_config.json")
+  } |
+  Select-Object -First 1
+
+if ($storeClaudeDirectory) {
+  $claudeDirectory = $storeClaudeDirectory
+  Write-Host "Detected Microsoft Store Claude Desktop."
+} else {
+  $claudeDirectory = $classicClaudeDirectory
+  Write-Host "Detected classic Claude Desktop configuration."
+}
+
 $configPath = Join-Path $claudeDirectory "claude_desktop_config.json"
 New-Item -ItemType Directory -Path $claudeDirectory -Force | Out-Null
 

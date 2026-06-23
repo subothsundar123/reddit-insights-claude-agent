@@ -16,6 +16,8 @@ Completely quit and reopen Claude Desktop. In a new chat, confirm the `reddit-pr
 
 The connector automatically checks the private publisher repository, downloads only unseen daily dump and feature-catalog files, verifies checksums, imports them into a separate local SQLite store, generates a decision-ready report, saves it locally, and offers follow-up analyses. There is no separate sync step.
 
+The installer supports both the classic installer and Microsoft Store versions of Claude Desktop. It backs up and merges the active configuration, preserving existing MCP servers and preferences.
+
 The full copy-ready prompt is available in `desktop/DAILY_INSIGHTS_PROMPT.md`.
 
 ## Claude Code alternative
