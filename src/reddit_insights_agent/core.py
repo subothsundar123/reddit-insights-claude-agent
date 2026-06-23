@@ -135,6 +135,9 @@ def connect(root: pathlib.Path | None = None) -> sqlite3.Connection:
         db.execute("ALTER TABLE posts ADD COLUMN source_method TEXT")
     if "evidence_quality" not in columns:
         db.execute("ALTER TABLE posts ADD COLUMN evidence_quality TEXT")
+    db.execute("UPDATE posts SET source_method='reddit_collector' WHERE source_method IS NULL OR source_method=''")
+    db.execute("UPDATE posts SET evidence_quality='direct_collection' WHERE evidence_quality IS NULL OR evidence_quality=''")
+    db.commit()
     return db
 
 
@@ -230,7 +233,18 @@ def analyze(days: int | None = 30) -> dict[str, Any]:
     evidence = []
     for p in posts:
         text = f"{p['title']} {p['body']}".lower(); weight = _engagement(p["score"], p["num_comments"])
-        matched_topics = [name for name, keys in TOPICS.items() if any(k in text for k in keys)] or ["Other market discussion"]
+        technical_only = {
+            "API reliability & WebSockets",
+            "Historical data & backtesting",
+            "Strategy building & automation",
+            "Order execution & OMS",
+            "Developer onboarding",
+        }
+        matched_topics = [
+            name for name, keys in TOPICS.items()
+            if (name not in technical_only or p["segment"] == "api_algo")
+            and any(k in text for k in keys)
+        ] or ["Other market discussion"]
         for name in matched_topics:
             item = topic_rows.setdefault(name, {"topic": name, "mentions": 0, "engagement": 0.0, "retail": 0, "api_algo": 0, "examples": []})
             item["mentions"] += 1; item["engagement"] += weight; item[p["segment"]] += 1
