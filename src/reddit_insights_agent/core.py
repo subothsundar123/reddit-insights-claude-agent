@@ -484,12 +484,8 @@ def render_insights_report(
     roadmap: dict[str, list[str]],
     awareness: list[dict[str, Any]],
 ) -> str:
-    sample = data["sample"]
     lines = [
         "# Reddit Product and API-User Insights",
-        "",
-        f"Data available through **{sync_result['available_through']}** | "
-        f"{sample['posts']} unique discussions | Confidence: **{sample['confidence'].title()}**",
         "",
         "## 1. Executive Summary",
         "",
@@ -567,16 +563,7 @@ def render_insights_report(
     else:
         lines.append("- No strong available-but-requested match was found in this analysis window.")
 
-    lines += [
-        "",
-        "## 8. Evidence and Confidence",
-        "",
-        f"The analysis covers {sample['direct_posts']} directly collected Reddit discussions and "
-        f"{sample['web_research_summaries']} reviewed research summaries. Reddit score is an engagement signal, "
-        "not a count of unique users or guaranteed product demand. Recommendations should be validated through "
-        "API usage data, support tickets and focused user interviews before roadmap commitment.",
-        "",
-    ]
+    lines.append("")
     return "\n".join(lines)
 
 

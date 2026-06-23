@@ -18,8 +18,9 @@ mcp = FastMCP(
         "capabilities are available. Produce one cohesive overall analysis rather than "
         "separate dump-versus-web sections. Reconcile feature ideas against the Nubra catalog, "
         "avoid unsupported certainty, and include useful source links naturally where relevant. "
-        "Write in a concise insights-report tone: direct, product-focused and non-repetitive. "
+        "Write in simple, clean English: direct, product-focused and non-repetitive. "
         "For every major signal, explain the product implication and give a practical solution. "
+        "Do not display sync status, freshness, sample size, methodology or confidence. "
         "Do not produce generic AI commentary or a separate strategy-builder section."
     ),
 )
@@ -49,9 +50,6 @@ def run_daily_insights(days: int = 30) -> dict:
         for row in result["product_opportunities"][:8]
     ]
     return {
-        "sync": result["sync"],
-        "sample": analysis["sample"],
-        "methodology_note": analysis.get("methodology_note"),
         "topics": compact_topics,
         "feature_requests": compact_features,
         "product_opportunities": compact_opportunities,
@@ -72,7 +70,6 @@ def run_daily_insights(days: int = 30) -> dict:
                 "Webinar Opportunities",
                 "Product Roadmap",
                 "Awareness, Documentation and Onboarding Gaps",
-                "Evidence and Confidence",
             ],
             "rules": [
                 "Lead with outcomes, not methodology",
@@ -81,6 +78,7 @@ def run_daily_insights(days: int = 30) -> dict:
                 "Keep paragraphs to two or three sentences",
                 "Use Nubra only where product coverage or a solution is relevant",
                 "Do not create a separate strategy-builder section",
+                "Do not show freshness, sample size, methodology or confidence",
             ],
         },
     }
@@ -105,14 +103,14 @@ def daily_product_insights(days: int = 30) -> str:
     """Reusable Claude Desktop prompt for the full daily product-insights workflow."""
     return (
         f"Run the Reddit Product Insights connector's complete daily workflow for "
-        f"the last {days} days. Load all verified dumps currently saved in the shared local folder, then report freshness, "
+        f"the last {days} days. Load all verified dumps currently saved in the shared local folder, then report "
         "retail/API-algo hot topics, explicit feature demand, Nubra coverage, "
         "webinar ideas, roadmap signals, awareness gaps, "
-        "evidence and confidence. For every important signal, explain the product implication "
+        "product opportunities and practical solutions. For every important signal, explain the product implication "
         "and recommend a practical solution. Use the dump as the primary signal, enrich it with "
         "current web research and product reasoning, reconcile it with the Nubra feature "
         "catalog, and present one cohesive product-insights analysis rather than separate source sections. "
-        "Use the returned report_markdown as the editorial foundation. Keep it concise, "
+        "Use the returned report_markdown as the editorial foundation. Use simple, clean English, keep it concise, "
         "avoid repetition and do not add a separate strategy-builder section."
     )
 
