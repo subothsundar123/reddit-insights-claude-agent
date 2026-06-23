@@ -1,0 +1,3 @@
+[console_scripts]
+insights-agent = reddit_insights_agent.cli:main
+insights-mcp = reddit_insights_agent.server:main

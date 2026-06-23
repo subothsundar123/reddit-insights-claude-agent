@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "reddit-product-insights": {
+      "command": "C:\\path\\to\\reddit_insights_claude_agent\\.venv\\Scripts\\python.exe",
+      "args": ["-m", "reddit_insights_agent.server"],
+      "env": {
+        "INSIGHTS_DATA_REPO_URL": "https://github.com/YOUR_ORG/reddit-scraper-github-publisher.git",
+        "INSIGHTS_DATA_BRANCH": "main",
+        "INSIGHTS_LOCAL_DATA_DIR": "%USERPROFILE%\\Documents\\Nubra Product Insights"
+      }
+    }
+  }
+}
+
