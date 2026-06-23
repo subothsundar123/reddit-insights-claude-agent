@@ -24,14 +24,33 @@ mcp = FastMCP(
 def run_daily_insights(days: int = 30) -> dict:
     """Sync and analyze the collected dumps as the primary input for a broader research-enriched product analysis."""
     result = daily_insights(days)
-    result["analysis_policy"] = {
+    policy = {
         "scope": "integrated_dump_web_reasoning",
         "primary_signal": "Synchronized Reddit dumps",
         "enrichment": "Current web research and product reasoning",
         "catalog_usage": "Reconcile recommendations with Nubra's existing, partial, upcoming and missing capabilities",
         "presentation": "One unified analysis; do not split findings into dump and external-research sections",
     }
-    return result
+    analysis = result["analysis"]
+    compact_topics = [
+        {key: row[key] for key in ("topic", "mentions", "engagement", "retail", "api_algo")}
+        for row in analysis["topics"][:10]
+    ]
+    compact_features = [
+        {key: row[key] for key in ("feature", "status", "mentions", "engagement")}
+        for row in analysis["feature_requests"][:12]
+    ]
+    return {
+        "sync": result["sync"],
+        "sample": analysis["sample"],
+        "methodology_note": analysis.get("methodology_note"),
+        "topics": compact_topics,
+        "feature_requests": compact_features,
+        "top_evidence": analysis["top_evidence"][:10],
+        "report_markdown": result["report_markdown"],
+        "report_path": result["report_path"],
+        "analysis_policy": policy,
+    }
 
 @mcp.tool()
 def search_evidence(query: str, limit: int = 20) -> list[dict]:

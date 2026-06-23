@@ -55,6 +55,9 @@ class Source:
             return
         env = os.environ.copy()
         env["GIT_TERMINAL_PROMPT"] = "0"
+        env["GCM_INTERACTIVE"] = "Never"
+        env["GIT_ASKPASS"] = "echo"
+        env["SSH_ASKPASS"] = "echo"
         timeout = int(os.getenv("INSIGHTS_GIT_TIMEOUT_SECONDS", "20"))
         try:
             if not (self.cache / ".git").exists():
@@ -62,13 +65,13 @@ class Source:
                 subprocess.run(
                     ["git", "clone", "--filter=blob:none", "--no-checkout", "--branch", self.branch, self.url, str(self.cache)],
                     check=True, timeout=timeout, stdin=subprocess.DEVNULL,
-                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env,
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env,
                 )
             else:
                 subprocess.run(
                     ["git", "fetch", "--quiet", "origin", self.branch],
                     cwd=self.cache, check=True, timeout=timeout, stdin=subprocess.DEVNULL,
-                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env,
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env,
                 )
         except (subprocess.TimeoutExpired, subprocess.CalledProcessError) as exc:
             if (self.cache / ".git").exists():
@@ -77,12 +80,9 @@ class Source:
                     "the latest verified local cache was used."
                 )
             else:
-                detail = getattr(exc, "stderr", b"")
-                if isinstance(detail, bytes):
-                    detail = detail.decode("utf-8", errors="replace")
                 raise RuntimeError(
                     "Unable to initialize the private data repository. "
-                    "Authenticate Git on this computer and retry. " + str(detail)
+                    "Authenticate Git on this computer and retry."
                 ) from exc
 
     def bytes(self, rel: str) -> bytes:
@@ -238,16 +238,17 @@ def _range_clause(days: int | None) -> tuple[str, list[Any]]:
 
 def search(query: str, limit: int = 20) -> list[dict[str, Any]]:
     db = connect()
-    safe = " OR ".join(re.findall(r"[\w-]+", query)) or query
+    tokens = re.findall(r"[\w-]+", query)
+    safe = " OR ".join('"' + token.replace('"', '""') + '"' for token in tokens) or '""'
     rows = db.execute(
         """SELECT kind, item_id, title,
-                  snippet(evidence_fts, 3, '[', ']', ' ... ', 45) AS excerpt,
+                  snippet(evidence_fts, 3, '[', ']', ' ... ', 28) AS excerpt,
                   subreddit, collection_date, bm25(evidence_fts) AS rank
            FROM evidence_fts
            WHERE evidence_fts MATCH ?
            ORDER BY rank
            LIMIT ?""",
-        (safe, min(max(limit, 1), 50)),
+        (safe, min(max(limit, 1), 15)),
     ).fetchall()
     result = []
     seen_items: set[tuple[str, str]] = set()
