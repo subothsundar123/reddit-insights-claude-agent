@@ -4,7 +4,7 @@ Use the Reddit Product Insights connector and run the complete daily-insights wo
 
 Use the synchronized dump as the primary community-signal foundation. Enrich it with current web research and strong product reasoning, reconcile recommendations with the Nubra feature catalog, and produce one cohesive overall report. Do not create separate “dump findings” and “external research findings” sections.
 
-First check for and import every dump and Nubra feature-catalog update that is not already present locally.
+Load every verified dump and the latest Nubra feature catalog already saved in the shared local insights folder. Do not access GitHub from Claude Desktop. If no local data exists, tell the user to open Claude Code and run `/update-insights-data`.
 
 Write the result as a clean, meeting-ready product report. Use short, direct sentences and avoid generic AI explanations, repeated observations and long methodology sections. Lead with the insight and business implication. Every major signal must include practical product thinking and a suggested solution.
 

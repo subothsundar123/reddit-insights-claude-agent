@@ -11,8 +11,10 @@ class DailyFlowTests(unittest.TestCase):
         self.temp = pathlib.Path(tempfile.mkdtemp(prefix="insights-agent-test-"))
         os.environ["INSIGHTS_DATA_REPO_PATH"] = str(PUBLISHER)
         os.environ["INSIGHTS_LOCAL_DATA_DIR"] = str(self.temp)
+        os.environ.pop("INSIGHTS_DESKTOP_LOCAL_ONLY", None)
 
     def tearDown(self):
+        os.environ.pop("INSIGHTS_DESKTOP_LOCAL_ONLY", None)
         shutil.rmtree(self.temp, ignore_errors=True)
 
     def test_daily_is_incremental_and_grounded(self):
@@ -43,5 +45,16 @@ class DailyFlowTests(unittest.TestCase):
         daily_insights(30)
         result = feature_lookup("UAT")
         self.assertTrue(any(row["status"] == "available" for row in result))
+
+    def test_desktop_uses_saved_files_without_remote_sync(self):
+        from reddit_insights_agent.core import daily_insights
+        initial = daily_insights(30)
+        self.assertEqual(initial["sync"]["mode"], "github_sync")
+        os.environ["INSIGHTS_DESKTOP_LOCAL_ONLY"] = "1"
+        os.environ["INSIGHTS_DATA_REPO_PATH"] = str(self.temp / "does-not-exist")
+        desktop = daily_insights(30)
+        self.assertEqual(desktop["sync"]["mode"], "local_files_only")
+        self.assertEqual(desktop["sync"]["available_through"], "2026-06-23")
+        self.assertEqual(desktop["analysis"]["sample"]["posts"], 318)
 
 if __name__ == "__main__": unittest.main()

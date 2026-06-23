@@ -14,11 +14,18 @@ Completely quit and reopen Claude Desktop. In a new chat, confirm the `reddit-pr
 
 > Give me today's daily product insights.
 
-The connector automatically checks the private publisher repository, downloads only unseen daily dump and feature-catalog files, verifies checksums, imports them into a separate local SQLite store, generates a decision-ready report, saves it locally, and offers follow-up analyses. There is no separate sync step.
+Claude Code updates the shared data folder with `/update-insights-data`. Claude Desktop reads those verified local dumps and the local SQLite store, generates a decision-ready report, saves it locally, and offers follow-up analyses. Desktop does not access GitHub during report generation.
 
 The installer supports both the classic installer and Microsoft Store versions of Claude Desktop. It backs up and merges the active configuration, preserving existing MCP servers and preferences.
 
 The full copy-ready prompt is available in `desktop/DAILY_INSIGHTS_PROMPT.md`.
+
+## Shared-folder workflow
+
+1. Open this repository in Claude Code and run `/update-insights-data`.
+2. New dumps and catalog versions are saved under `%USERPROFILE%\Documents\Nubra Product Insights`.
+3. Open Claude Desktop and run the daily prompt.
+4. Desktop analyses only the files in that shared folder, so reporting remains fast and does not depend on GitHub credentials.
 
 ## Claude Code alternative
 

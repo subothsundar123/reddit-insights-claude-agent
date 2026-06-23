@@ -34,6 +34,7 @@ def main() -> None:
             "INSIGHTS_DATA_REPO_URL": args.repo_url,
             "INSIGHTS_DATA_BRANCH": "main",
             "INSIGHTS_LOCAL_DATA_DIR": args.local_data_dir,
+            "INSIGHTS_DESKTOP_LOCAL_ONLY": "1",
         },
     }
     args.config.write_text(
@@ -44,4 +45,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

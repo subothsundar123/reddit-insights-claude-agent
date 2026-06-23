@@ -98,8 +98,26 @@ class Source:
 
 def sync() -> dict[str, Any]:
     root = local_root(); root.mkdir(parents=True, exist_ok=True)
-    source = Source(); source.refresh()
     state_path = root / "sync-state.json"
+    local_only = os.getenv("INSIGHTS_DESKTOP_LOCAL_ONLY", "").lower() in {"1", "true", "yes"}
+    if local_only:
+        if not state_path.exists():
+            raise RuntimeError(
+                "No local insights data is available. Open the agent repository in "
+                "Claude Code and run /update-insights-data first."
+            )
+        state = _load(state_path)
+        import_local(root)
+        return {
+            "new_dumps": [],
+            "available_through": max(state.get("dumps", [])) if state.get("dumps") else None,
+            "catalog_version": state.get("catalog_version"),
+            "local_folder": str(root),
+            "warning": None,
+            "mode": "local_files_only",
+            "last_checked_at": state.get("last_checked_at"),
+        }
+    source = Source(); source.refresh()
     state = _load(state_path) if state_path.exists() else {"dumps": [], "catalog_version": None}
     index = source.json("manifests/all_dumps.json")
     pulled = []
@@ -136,7 +154,8 @@ def sync() -> dict[str, Any]:
     import_local(root)
     return {"new_dumps": pulled, "available_through": max(state["dumps"]) if state["dumps"] else None,
             "catalog_version": state.get("catalog_version"), "local_folder": str(root),
-            "warning": source.warning}
+            "warning": source.warning, "mode": "github_sync",
+            "last_checked_at": state.get("last_checked_at")}
 
 
 def connect(root: pathlib.Path | None = None) -> sqlite3.Connection:

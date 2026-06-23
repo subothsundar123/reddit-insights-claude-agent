@@ -9,8 +9,9 @@ mcp = FastMCP(
         "This connector provides evidence-grounded Reddit product insights. "
         "When the user asks for daily insights, today's insights, hot topics, "
         "API demand, webinars, roadmap, or similar product analysis, call "
-        "run_daily_insights first. That tool performs incremental synchronization "
-        "before analysis, so do not ask the user to run a separate sync step. "
+        "run_daily_insights first. In Claude Desktop, that tool reads the verified dumps "
+        "already saved in the shared local folder; GitHub updates are performed separately "
+        "by Claude Code through /update-insights-data. "
         "Preserve the retail versus API/algo split and all Nubra status qualifications. "
         "Use the synchronized dump as the primary community-signal foundation, then enrich "
         "the analysis with current web research and sound product reasoning when those "
@@ -25,7 +26,7 @@ mcp = FastMCP(
 
 @mcp.tool()
 def run_daily_insights(days: int = 30) -> dict:
-    """Sync and analyze the collected dumps as the primary input for a broader research-enriched product analysis."""
+    """Load and analyze the verified local dumps as the primary input for a broader research-enriched product analysis."""
     result = daily_insights(days)
     policy = {
         "scope": "integrated_dump_web_reasoning",
@@ -104,7 +105,7 @@ def daily_product_insights(days: int = 30) -> str:
     """Reusable Claude Desktop prompt for the full daily product-insights workflow."""
     return (
         f"Run the Reddit Product Insights connector's complete daily workflow for "
-        f"the last {days} days. Sync missing data first, then report freshness, "
+        f"the last {days} days. Load all verified dumps currently saved in the shared local folder, then report freshness, "
         "retail/API-algo hot topics, explicit feature demand, Nubra coverage, "
         "webinar ideas, roadmap signals, awareness gaps, "
         "evidence and confidence. For every important signal, explain the product implication "
