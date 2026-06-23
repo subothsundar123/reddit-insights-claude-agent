@@ -20,6 +20,19 @@ The installer supports both the classic installer and Microsoft Store versions o
 
 The full copy-ready prompt is available in `desktop/DAILY_INSIGHTS_PROMPT.md`.
 
+### Focused connector prompts
+
+Claude Desktop also exposes six short prompts for focused work:
+
+- `feature_requests` - strongest user requests and the right product response
+- `feature_gaps` - requested capabilities compared with Nubra's current coverage
+- `trend_check` - rising, stable and declining discussion themes
+- `improve_now` - practical improvements across product, SDK, MCP and support
+- `webinar_ideas` - webinar topics drawn from repeated questions and demand
+- `roadmap` - a simple Now, Next and Later product view
+
+These prompts use the same locally stored dumps and Nubra feature catalogue. They return concise text and tables directly in chat.
+
 ## Shared-folder workflow
 
 1. Open this repository in Claude Code and run `/update-insights-data`.

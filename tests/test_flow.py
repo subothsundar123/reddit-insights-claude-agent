@@ -60,4 +60,26 @@ class DailyFlowTests(unittest.TestCase):
         self.assertIn("directly in this chat", prompt)
         self.assertNotIn("create_insights_pdf", prompt)
 
+    def test_simple_analysis_prompts_are_available(self):
+        from reddit_insights_agent.server import (
+            feature_gaps,
+            feature_requests,
+            improve_now,
+            roadmap,
+            trend_check,
+            webinar_ideas,
+        )
+        prompts = {
+            "feature_requests": feature_requests(30),
+            "feature_gaps": feature_gaps(30),
+            "trend_check": trend_check(7, 30),
+            "improve_now": improve_now(30),
+            "webinar_ideas": webinar_ideas(30),
+            "roadmap": roadmap(30),
+        }
+        self.assertEqual(len(prompts), 6)
+        self.assertTrue(all("chat" in text.lower() for text in prompts.values()))
+        self.assertIn("Product, SDK, MCP and Support", prompts["improve_now"])
+        self.assertIn("Already available", prompts["feature_gaps"])
+
 if __name__ == "__main__": unittest.main()

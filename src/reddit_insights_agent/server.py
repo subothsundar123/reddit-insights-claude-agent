@@ -23,6 +23,7 @@ mcp = FastMCP(
         "Return the complete report directly in Claude Chat using concise text and clean tables. "
         "Do not create, attach or save a PDF or Markdown report file. "
         "Do not display sync status, freshness, sample size, methodology or confidence. "
+        "Write like a practical internal product note prepared by a team member. "
         "Do not produce generic AI commentary or a separate strategy-builder section."
     ),
 )
@@ -125,6 +126,74 @@ def daily_product_insights(days: int = 30) -> str:
         "Use the returned product opportunities and roadmap as the foundation. Use simple, clean English, keep it concise, "
         "avoid repetition and do not add a separate strategy-builder section. Show the full report directly "
         "in this chat using short text and clean tables. Do not create or attach a PDF or Markdown file."
+    )
+
+
+@mcp.prompt()
+def feature_requests(days: int = 30) -> str:
+    """Show the strongest feature requests found in the saved discussions."""
+    return (
+        f"Use run_daily_insights for the last {days} days and show the strongest feature requests. "
+        "Separate explicit requests from general discussion. Use a table with Feature, User need, "
+        "Nubra status and Recommended action. Check the Nubra catalogue before suggesting anything. "
+        "If Nubra already has it, focus on visibility, examples or adoption instead of rebuilding it. "
+        "Keep the wording short and natural, like an internal product note. Show the answer only in chat."
+    )
+
+
+@mcp.prompt()
+def feature_gaps(days: int = 30) -> str:
+    """Compare user demand with Nubra's existing feature coverage."""
+    return (
+        f"Use run_daily_insights for the last {days} days and compare the requested capabilities with "
+        "the Nubra feature catalogue. Group them as Already available, Partly covered, Upcoming and Missing. "
+        "For each item, explain the remaining user need and the next practical action. Include a separate short "
+        "table for existing capabilities users are missing. Do not treat upcoming or unverified work as publicly available. "
+        "Write like a product team member and show the answer only in chat."
+    )
+
+
+@mcp.prompt()
+def trend_check(short_days: int = 7, long_days: int = 30) -> str:
+    """Compare recent discussion signals with a longer period."""
+    return (
+        f"Use compare_insight_periods with {short_days} days and {long_days} days. Show what is rising, "
+        "what is stable and what is declining across retail and API/algo discussions. Focus on meaningful changes, "
+        "not raw Reddit score alone. Use a compact table with Topic, Direction, What changed and Product response. "
+        "Keep the conclusions practical and show the answer only in chat."
+    )
+
+
+@mcp.prompt()
+def improve_now(days: int = 30) -> str:
+    """Find practical improvements Nubra can make now."""
+    return (
+        f"Use run_daily_insights for the last {days} days and prepare a section called What Nubra Can Improve Now. "
+        "Give short, practical improvements across Product, SDK, MCP and Support. Base each action on a recurring "
+        "user need and check whether Nubra already has relevant coverage. Use a table with Area, User problem, "
+        "Improvement and Expected outcome. Avoid broad phrases and long explanations. Show the answer only in chat."
+    )
+
+
+@mcp.prompt()
+def webinar_ideas(days: int = 30) -> str:
+    """Turn repeated user questions into useful webinar ideas."""
+    return (
+        f"Use run_daily_insights for the last {days} days and suggest webinar ideas from repeated questions, "
+        "confusion and feature demand. Use a table with Topic, Audience, User question, What to demonstrate and "
+        "Relevant Nubra capability. Prefer topics that can educate users and improve product adoption. "
+        "Do not invent demand that is not present in the data. Show the answer only in chat."
+    )
+
+
+@mcp.prompt()
+def roadmap(days: int = 30) -> str:
+    """Turn current discussion signals into a product roadmap view."""
+    return (
+        f"Use run_daily_insights for the last {days} days and prepare a simple Now, Next and Later roadmap. "
+        "Consider recurring demand, user impact, Nubra's current coverage and whether the problem is product, "
+        "SDK, MCP, support or discovery. Do not add an available feature as new roadmap work; recommend adoption "
+        "or visibility improvements instead. Use one clean table and keep the reasoning direct. Show the answer only in chat."
     )
 
 def main() -> None:
