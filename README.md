@@ -1,20 +1,32 @@
 # Reddit Product Insights Agent
 
-The lead uses one command in Claude Code:
+## Recommended: Claude Desktop
 
-```text
-/daily-insights
+On the lead's Windows computer:
+
+```powershell
+git clone https://github.com/subothsundar123/reddit-insights-claude-agent.git
+cd reddit-insights-claude-agent
+powershell -ExecutionPolicy Bypass -File .\scripts\install_claude_desktop.ps1
 ```
 
-That command automatically checks the private publisher repository, downloads only unseen daily dump and feature-catalog files, verifies checksums, imports them into a separate local SQLite store, generates a decision-ready report, saves it locally, and offers drill-down commands. There is no separate sync step for the lead.
+Completely quit and reopen Claude Desktop. In a new chat, confirm the `reddit-product-insights` connector under **+ → Connectors**, then say:
 
-## Install
+> Give me today's daily product insights.
+
+The connector automatically checks the private publisher repository, downloads only unseen daily dump and feature-catalog files, verifies checksums, imports them into a separate local SQLite store, generates a decision-ready report, saves it locally, and offers follow-up analyses. There is no separate sync step.
+
+The full copy-ready prompt is available in `desktop/DAILY_INSIGHTS_PROMPT.md`.
+
+## Claude Code alternative
 
 ```powershell
 .\scripts\install.ps1
 ```
 
-Configure either `INSIGHTS_DATA_REPO_URL` (normal team usage) or `INSIGHTS_DATA_REPO_PATH` (local development). For a private GitHub repository, authenticate Git once on the lead's computer; credentials are never stored in this project.
+Claude Code users can invoke `/daily-insights`. Desktop users should use the natural-language prompt above because project `.claude/commands` are specific to Claude Code.
+
+Configure either `INSIGHTS_DATA_REPO_URL` (normal team usage) or `INSIGHTS_DATA_REPO_PATH` (local development). For the private GitHub repository, authenticate Git once on the lead's computer; credentials are never stored in this project.
 
 Claude Code discovers `.claude/commands` and the project charter automatically when opened in this folder. Claude Desktop can use `config/claude_desktop_config.example.json` to start the same MCP server.
 
