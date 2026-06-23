@@ -18,6 +18,8 @@ Configure either `INSIGHTS_DATA_REPO_URL` (normal team usage) or `INSIGHTS_DATA_
 
 Claude Code discovers `.claude/commands` and the project charter automatically when opened in this folder. Claude Desktop can use `config/claude_desktop_config.example.json` to start the same MCP server.
 
+The committed `.mcp.json` connects Claude Code to the local MCP server automatically. On first use, approve the project MCP server when Claude Code asks.
+
 ## Local data separation
 
 By default, pulled data, sync state, SQLite, and reports live in `%USERPROFILE%\Documents\Nubra Product Insights`, outside this code repository. Existing dates are never downloaded twice. Checksums prevent partial or altered imports.
