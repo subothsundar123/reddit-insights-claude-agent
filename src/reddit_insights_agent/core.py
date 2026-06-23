@@ -375,8 +375,7 @@ def render_markdown(sync_result, data, webinars, roadmap, awareness) -> str:
     if awareness:
         for f in awareness: lines.append(f"- **{f['feature']}** is already available but still requested: improve discovery, examples, webinar coverage, and in-product guidance.")
     else: lines.append("- No strong available-but-requested match in this window.")
-    lines += ["", "## Strategy-builder expectations", "", "Users expect strategy creation to connect conditions, reliable backtesting, paper/forward testing, risk controls, execution, monitoring and performance review. Ground recommendations in Nubra UAT, NubraOSS backtesting, available market/order APIs, and only describe OMS V3/MCP with their catalog qualification.", "",
-              "## Evidence and caveats", "", "Reddit score is a platform-provided net-vote signal, not unique users or demand by itself. Ranking combines frequency with log-scaled score/comment engagement. Treat low-volume signals as discovery inputs, not roadmap commitments.", "", "## Drill-down commands", "",
+    lines += ["", "## Evidence and caveats", "", "Reddit score is a platform-provided net-vote signal, not unique users or demand by itself. Ranking combines frequency with log-scaled score/comment engagement. Treat low-volume signals as discovery inputs, not roadmap commitments.", "", "## Drill-down commands", "",
               "`/api-insights` · `/retail-insights` · `/feature-demand` · `/webinar-plan` · `/product-roadmap` · `/awareness-gaps` · `/strategy-builder` · `/competitor-insights` · `/evidence` · `/compare-periods`", ""]
     return "\n".join(lines)
 

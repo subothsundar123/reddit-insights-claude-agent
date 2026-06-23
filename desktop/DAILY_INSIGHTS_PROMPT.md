@@ -14,8 +14,7 @@ First check for and import every dump and Nubra feature-catalog update that is n
 6. webinar opportunities;
 7. product-roadmap signals;
 8. awareness, documentation and onboarding gaps;
-9. strategy-builder expectations; and
-10. evidence, caveats and suggested follow-up analyses.
+9. evidence, caveats and suggested follow-up analyses.
 
 Do not treat Reddit score as unique demand. Separate explicit requests from general discussion and qualify internal or upcoming Nubra capabilities.
 

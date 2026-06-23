@@ -55,7 +55,7 @@ def daily_product_insights(days: int = 30) -> str:
         f"Run the Reddit Product Insights connector's complete daily workflow for "
         f"the last {days} days. Sync missing data first, then report freshness, "
         "retail/API-algo hot topics, explicit feature demand, Nubra coverage, "
-        "webinar ideas, roadmap signals, awareness gaps, strategy-builder expectations, "
+        "webinar ideas, roadmap signals, awareness gaps, "
         "evidence and confidence. Use the dump as the primary signal, enrich it with "
         "current web research and product reasoning, reconcile it with the Nubra feature "
         "catalog, and present one cohesive overall analysis rather than separate source sections."
