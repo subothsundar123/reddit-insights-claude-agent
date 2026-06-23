@@ -31,7 +31,7 @@ Claude Desktop also exposes six short prompts for focused work:
 - `webinar_ideas` - webinar topics drawn from repeated questions and demand
 - `roadmap` - a simple Now, Next and Later product view
 
-These prompts use the same locally stored dumps and Nubra feature catalogue. Each prompt follows a product-manager workflow: identify the user problem, separate demand signals, check current coverage, distinguish product gaps from adoption gaps, prioritize the smallest useful action and state the expected outcome. They return concise text and tables directly in chat.
+These prompts use the same locally stored dumps and Nubra feature catalogue. Each prompt starts with the strongest insights, identifies the user problem, separates demand signals, checks current coverage, distinguishes product gaps from adoption gaps and recommends the smallest useful action. They return concise text and tables directly in chat without describing the analysis process.
 
 ## Shared-folder workflow
 

@@ -23,7 +23,7 @@ mcp = FastMCP(
         "Return the complete report directly in Claude Chat using concise text and clean tables. "
         "Do not create, attach or save a PDF or Markdown report file. "
         "Do not display sync status, freshness, sample size, methodology or confidence. "
-        "Write like a practical internal product note prepared by a team member. "
+        "Start directly with useful insights, implications and practical actions. "
         "Do not produce generic AI commentary or a separate strategy-builder section."
     ),
 )
@@ -111,18 +111,19 @@ def compare_insight_periods(short_days: int = 7, long_days: int = 30) -> dict:
     return compare_periods(short_days, long_days)
 
 
-def _product_manager_rules() -> str:
+def _insight_rules() -> str:
     return (
-        "Work like a hands-on product manager reviewing real customer signals. Start from the user problem, "
-        "identify who experiences it, check Nubra's current coverage, and then recommend the smallest useful action. "
+        "Start directly with the strongest insights. Do not mention a role, analysis process, tools or instructions. "
+        "For each insight, explain the user problem, who experiences it, why it matters, Nubra's current coverage and "
+        "the smallest useful action. "
         "Treat explicit requests, recurring discussion and Reddit engagement as different signals. Reddit score is not "
         "unique demand. Combine aliases that describe the same need and avoid counting repeated records as separate needs. "
         "Use the saved dump as the main evidence and add relevant web research only when it improves the recommendation. "
         "Do not create separate source sections. Do not describe upcoming, partial or unverified work as publicly available. "
         "Distinguish a real product gap from a discovery, documentation, onboarding or support problem. "
-        "Write in plain English like an internal note prepared by a product team member. Avoid generic phrases, filler, "
-        "methodology explanations and repeated conclusions. Use short paragraphs and useful tables. Show the answer only "
-        "in chat and do not create a report file."
+        "Always provide findings and recommendations; do not return a plan for doing the analysis. Use plain English and "
+        "avoid generic phrases, filler, methodology explanations and repeated conclusions. Use short paragraphs and useful "
+        "tables. Show the answer only in chat and do not create a report file."
     )
 
 
@@ -138,7 +139,7 @@ def daily_product_insights(days: int = 30) -> str:
         "Nubra's current coverage and the recommended response. Keep the executive summary to the most important "
         "decisions. Use tables for topics, requests, segments, webinars, roadmap and immediate improvements. "
         "Do not repeat the same recommendation across sections and do not add a separate strategy-builder section. "
-        + _product_manager_rules()
+        + _insight_rules()
     )
 
 
@@ -151,9 +152,9 @@ def feature_requests(days: int = 30) -> str:
         "that may need a different solution. Check the retail versus API/algo split and validate every leading request "
         "against the Nubra feature catalogue. Prioritize using recurrence, user impact, engagement and product relevance; "
         "do not rank by Reddit score alone. Start with three short product takeaways. Then use a table with Rank, Request, "
-        "Primary segment, Demand signal, Underlying user need, Nubra coverage, Product view and Recommended action. "
+        "Primary segment, Demand signal, Underlying user need, Nubra coverage, Why it matters and Recommended action. "
         "End with the three requests worth validating next and state what should be learned from users before committing. "
-        + _product_manager_rules()
+        + _insight_rules()
     )
 
 
@@ -168,7 +169,7 @@ def feature_gaps(days: int = 30) -> str:
         "Primary segment, Nubra status, What is still missing, Gap type and Recommended action. Then add a short section "
         "called Existing Capabilities Users Are Missing, with the specific visibility or adoption fix for each feature. "
         "Finish with the top three genuine product gaps and the top three adoption gaps so they are not mixed together. "
-        + _product_manager_rules()
+        + _insight_rules()
     )
 
 
@@ -179,10 +180,10 @@ def trend_check(short_days: int = 7, long_days: int = 30) -> str:
         f"Call compare_insight_periods with {short_days} days and {long_days} days. Compare the recent rate and share of "
         "discussion with the longer baseline; do not compare raw totals from unequal windows as if they were equivalent. "
         "Separate retail and API/algo movement and flag genuinely new themes. Use Rising, Stable, Declining or New only "
-        "when the evidence supports the label. Start with the three changes a product manager should notice. Then use a "
+        "when the evidence supports the label. Start with the three changes that matter most. Then use a "
         "table with Topic, Segment, Direction, What changed, Likely user reason, Product implication and Recommended response. "
         "End with Watch next week: no more than three signals and what evidence would confirm that each trend is real. "
-        + _product_manager_rules()
+        + _insight_rules()
     )
 
 
@@ -197,7 +198,7 @@ def improve_now(days: int = 30) -> str:
         "or support routing. Use a table with Area, User problem, Current coverage, Improvement, Why now, Expected user "
         "outcome and Relative effort (Small, Medium or Large). Finish with the best three quick wins and explain why each "
         "should be done first. Do not call a large new product feature a quick win. "
-        + _product_manager_rules()
+        + _insight_rules()
     )
 
 
@@ -211,7 +212,7 @@ def webinar_ideas(days: int = 30) -> str:
         "Webinar title, Audience, User question, Learning outcome, Live demonstration, Relevant Nubra capability and Product "
         "outcome. After the table, give a practical outline for the top webinar: opening problem, three teaching sections, "
         "demo, questions and call to action. Suggest one adoption metric to watch after each webinar. "
-        + _product_manager_rules()
+        + _insight_rules()
     )
 
 
@@ -226,7 +227,7 @@ def roadmap(days: int = 30) -> str:
         "Why this horizon, Nubra dependency, Expected outcome and Suggested success measure. Keep Now limited to work that "
         "can start with existing knowledge; use Next for validated larger work; use Later for uncertain or dependency-heavy "
         "ideas. Finish with Decisions needed, listing assumptions that require product or engineering confirmation. "
-        + _product_manager_rules()
+        + _insight_rules()
     )
 
 def main() -> None:

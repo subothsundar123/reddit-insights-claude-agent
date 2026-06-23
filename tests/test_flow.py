@@ -85,6 +85,7 @@ class DailyFlowTests(unittest.TestCase):
         self.assertIn("recent rate and share", prompts["trend_check"])
         self.assertIn("Learning outcome", prompts["webinar_ideas"])
         self.assertIn("Suggested success measure", prompts["roadmap"])
-        self.assertTrue(all("hands-on product manager" in text for text in prompts.values()))
+        self.assertTrue(all("Start directly with the strongest insights" in text for text in prompts.values()))
+        self.assertTrue(all("do not return a plan" in text for text in prompts.values()))
 
 if __name__ == "__main__": unittest.main()
