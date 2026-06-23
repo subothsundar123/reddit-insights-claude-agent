@@ -12,6 +12,7 @@ import shutil
 import sqlite3
 import subprocess
 from collections import Counter, defaultdict
+from itertools import combinations
 from typing import Any
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -260,6 +261,25 @@ PRODUCT_DISCOVERY_TERMS = {
     "login", "session", "security", "research", "fundamental", "option", "risk", "pricing",
 }
 
+COMPETITORS = {
+    "Zerodha": ["zerodha", "kite connect", "kite api"],
+    "Upstox": ["upstox"],
+    "Angel One": ["angel one", "smartapi", "smart api"],
+    "Fyers": ["fyers"],
+    "Dhan": ["dhan", "dhanhq"],
+    "Shoonya": ["shoonya", "finvasia"],
+    "Alice Blue": ["alice blue", "ant api"],
+    "5paisa": ["5paisa", "5 paisa"],
+    "ICICI Direct": ["icici direct", "breeze api"],
+    "Kotak Neo": ["kotak neo", "kotak securities"],
+    "Groww": ["groww"],
+    "Flattrade": ["flattrade"],
+    "Tradetron": ["tradetron"],
+    "Streak": ["streak"],
+    "AlgoTest": ["algotest", "algo test"],
+    "Sensibull": ["sensibull"],
+}
+
 PRODUCT_PLAYBOOK = {
     "API reliability & WebSockets": {
         "product_thinking": "Reliability is part of the API product, not only an infrastructure metric. Visible health and predictable recovery improve developer trust.",
@@ -398,6 +418,10 @@ PRODUCT_PLAYBOOK = {
 REQUEST = re.compile(r"\b(need|want|wish|request|missing|looking for|would like|should have|feature|support for|can we|is there an api)\b", re.I)
 
 
+def _contains_alias(text: str, alias: str) -> bool:
+    return re.search(r"(?<!\w)" + re.escape(alias.lower()) + r"(?!\w)", text) is not None
+
+
 def _engagement(score: int, comments: int) -> float:
     return round(math.log1p(max(score, 0)) + 0.6 * math.log1p(max(comments, 0)), 3)
 
@@ -457,6 +481,8 @@ def analyze(days: int | None = 30) -> dict[str, Any]:
     db.close()
     topic_rows: dict[str, dict[str, Any]] = {}
     feature_rows: dict[str, dict[str, Any]] = {}
+    competitor_rows: dict[str, dict[str, Any]] = {}
+    cross_topic_rows: dict[tuple[str, str], dict[str, Any]] = {}
     emerging_candidates: list[dict[str, Any]] = []
     evidence = []
     for p in posts:
@@ -472,6 +498,42 @@ def analyze(days: int | None = 30) -> dict[str, Any]:
             if (name not in technical_only or p["segment"] == "api_algo")
             and any(k in text for k in keys)
         ]
+        known_topics = sorted(set(matched_topics))
+        for topic_a, topic_b in combinations(known_topics, 2):
+            pair_key = (topic_a, topic_b)
+            pair = cross_topic_rows.setdefault(pair_key, {
+                "topic_a": topic_a,
+                "topic_b": topic_b,
+                "mentions": 0,
+                "engagement": 0.0,
+                "retail": 0,
+                "api_algo": 0,
+                "examples": [],
+            })
+            pair["mentions"] += 1
+            pair["engagement"] += weight
+            pair[p["segment"]] += 1
+            if len(pair["examples"]) < 3:
+                pair["examples"].append({"title": p["title"], "url": p["permalink"]})
+
+        for competitor, aliases in COMPETITORS.items():
+            if not any(_contains_alias(text, alias) for alias in aliases):
+                continue
+            item = competitor_rows.setdefault(competitor, {
+                "competitor": competitor,
+                "mentions": 0,
+                "engagement": 0.0,
+                "retail": 0,
+                "api_algo": 0,
+                "related_topics": Counter(),
+                "examples": [],
+            })
+            item["mentions"] += 1
+            item["engagement"] += weight
+            item[p["segment"]] += 1
+            item["related_topics"].update(known_topics)
+            if len(item["examples"]) < 3:
+                item["examples"].append({"title": p["title"], "url": p["permalink"]})
         if not matched_topics:
             if any(term in text for term in PRODUCT_DISCOVERY_TERMS):
                 emerging_candidates.append({
@@ -502,12 +564,28 @@ def analyze(days: int | None = 30) -> dict[str, Any]:
         evidence.append((weight, p))
     topics = sorted(topic_rows.values(), key=lambda x: (x["mentions"], x["engagement"]), reverse=True)
     requested = sorted(feature_rows.values(), key=lambda x: (x["mentions"], x["engagement"]), reverse=True)
+    cross_topic_insights = sorted(
+        cross_topic_rows.values(),
+        key=lambda item: (item["mentions"], item["engagement"]),
+        reverse=True,
+    )[:15]
+    competitor_signals = sorted(
+        competitor_rows.values(),
+        key=lambda item: (item["mentions"], item["engagement"]),
+        reverse=True,
+    )[:12]
+    for item in competitor_signals:
+        item["related_topics"] = [
+            {"topic": topic, "mentions": count}
+            for topic, count in item["related_topics"].most_common(4)
+        ]
     emerging_candidates = sorted(
         emerging_candidates,
         key=lambda item: (item["engagement"], item["comments"]),
         reverse=True,
     )[:12]
-    for row in topics + requested: row["engagement"] = round(row["engagement"], 2)
+    for row in topics + requested + cross_topic_insights + competitor_signals:
+        row["engagement"] = round(row["engagement"], 2)
     top_evidence = [{"title": p["title"], "segment": p["segment"], "score": p["score"], "comments": p["num_comments"], "url": p["permalink"]} for _, p in sorted(evidence, key=lambda item: item[0], reverse=True)[:15]]
     source_counts = Counter(p.get("source_method") or "unknown" for p in posts)
     direct_count = sum(v for k, v in source_counts.items() if k != "web_search_review")
@@ -521,6 +599,8 @@ def analyze(days: int | None = 30) -> dict[str, Any]:
                 "They increase thematic coverage and mention frequency but add zero engagement weight."
             ), "topics": topics[:20],
             "feature_requests": requested[:15], "emerging_topic_candidates": emerging_candidates,
+            "cross_topic_insights": cross_topic_insights,
+            "competitor_signals": competitor_signals,
             "top_evidence": top_evidence}
 
 

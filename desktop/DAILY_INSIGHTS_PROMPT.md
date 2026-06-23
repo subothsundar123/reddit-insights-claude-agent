@@ -21,6 +21,7 @@ Use this simple structure:
 7. Existing Capabilities Users Are Missing
 8. What Nubra Can Improve Now
 9. Emerging Topics and New Ideas
+10. Competitor Signals
 
 For the topic and feature tables, include what users are discussing, why it matters from a product standpoint, Nubra's current coverage and the recommended action. If Nubra already has a requested capability, recommend discovery, documentation, examples or marketing instead of rebuilding it.
 
@@ -29,5 +30,7 @@ Do not treat Reddit score as unique demand. Separate explicit requests from gene
 Use simple, clean English. Keep the report product-focused and solution-oriented. Include useful source links naturally where relevant. Do not create a separate strategy-builder section; incorporate related signals into feature and roadmap recommendations.
 
 Do not limit the analysis to the predefined topic list. Review emerging topic candidates and surface new Nubra-relevant problems or ideas when multiple discussions support them. Consider product, APIs, market data, analytics, SDK, MCP, automation, execution, risk, research, onboarding, pricing, support and platform usability. Do not promote a single isolated post as a trend.
+
+Review cross-topic signals and show meaningful combined needs supported by multiple discussions. Review competitor mentions as context only: do not treat mention counts as market share, preference or sentiment, and do not claim a competitor strength or weakness without supporting discussion evidence.
 
 Show the complete report directly in Claude Chat using concise text and clean tables. Do not create, attach or save a PDF or Markdown report file.

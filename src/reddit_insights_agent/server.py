@@ -68,6 +68,8 @@ def run_daily_insights(days: int = 30) -> dict:
             "current_roadmap_actions": result["roadmap"].get("Now", [])[:6],
         },
         "emerging_topic_candidates": analysis.get("emerging_topic_candidates", [])[:10],
+        "cross_topic_insights": analysis.get("cross_topic_insights", [])[:12],
+        "competitor_signals": analysis.get("competitor_signals", [])[:10],
         "top_evidence": analysis["top_evidence"][:10],
         "analysis_policy": policy,
         "report_contract": {
@@ -82,6 +84,7 @@ def run_daily_insights(days: int = 30) -> dict:
                 "Existing Capabilities Users Are Missing",
                 "What Nubra Can Improve Now",
                 "Emerging Topics and New Ideas",
+                "Competitor Signals",
             ],
             "rules": [
                 "Lead with outcomes, not methodology",
@@ -127,6 +130,9 @@ def _insight_rules() -> str:
         "multiple discussions point to a Nubra-relevant problem or opportunity. Do not force new signals into an existing "
         "category, and do not promote an isolated post as a trend. Consider opportunities across product, APIs, market data, "
         "analytics, SDK, MCP, automation, execution, risk, research, onboarding, pricing, support and platform usability. "
+        "Review cross_topic_insights for user needs that repeatedly appear together; only surface combinations supported "
+        "by more than one discussion. Treat competitor mentions as context, not market share or user preference. Do not "
+        "infer competitor strengths or weaknesses without supporting discussion examples. "
         "Always provide findings and recommendations; do not return a plan for doing the analysis. Use plain English and "
         "avoid generic phrases, filler, methodology explanations and repeated conclusions. Use short paragraphs and useful "
         "tables. Show the answer only in chat and do not create a report file."
@@ -141,10 +147,11 @@ def daily_product_insights(days: int = 30) -> str:
         "Use this exact structure: 1. Executive Summary; 2. Most Discussed Topics and Product Response; "
         "3. Most Requested API Capabilities; 4. Retail and API/Algo Discussion Split; 5. Webinar Opportunities; "
         "6. Product Roadmap; 7. Existing Capabilities Users Are Missing; 8. What Nubra Can Improve Now; "
-        "9. Emerging Topics and New Ideas. "
+        "9. Emerging Topics and New Ideas; 10. Competitor Signals. "
         "For each major topic, state the user problem, affected segment, signal in the data, product implication, "
         "Nubra's current coverage and the recommended response. Keep the executive summary to the most important "
-        "decisions. Use tables for topics, requests, segments, webinars, roadmap and immediate improvements. "
+        "decisions. Inside the topic section, add a short related-topic table when cross_topic_insights reveal a meaningful "
+        "combined need. Use tables for topics, requests, segments, webinars, roadmap and immediate improvements. "
         "Do not repeat the same recommendation across sections and do not add a separate strategy-builder section. "
         + _insight_rules()
     )
@@ -248,6 +255,33 @@ def new_ideas(days: int = 30) -> str:
         "supports it. Use a table with Emerging topic, Supporting signal, Affected segment, Why it matters for Nubra, "
         "Possible opportunity and What to validate next. Separate genuinely new product ideas from extensions to existing "
         "features. End with the two strongest ideas worth further discovery; return fewer if the evidence is weak. "
+        + _insight_rules()
+    )
+
+
+@mcp.prompt()
+def competitors(days: int = 30) -> str:
+    """Review competitor mentions and the user needs discussed around them."""
+    return (
+        f"Call run_daily_insights for the last {days} days and review competitor_signals with their supporting examples "
+        "and related topics. Show which platforms are mentioned, which segment mentions them, what user problem or workflow "
+        "is being discussed and what Nubra can learn from the discussion. Use a table with Competitor, Discussion signal, "
+        "Segment, Related need, Evidence example and Possible Nubra response. Do not treat mention count as market share, "
+        "recommendation or sentiment. Do not label a competitor strength or weakness unless the supporting discussion says "
+        "so clearly. End with no more than three competitive opportunities supported by repeated evidence. "
+        + _insight_rules()
+    )
+
+
+@mcp.prompt()
+def topic_links(days: int = 30) -> str:
+    """Find product opportunities where user discussion themes repeatedly overlap."""
+    return (
+        f"Call run_daily_insights for the last {days} days and review cross_topic_insights. Keep only topic combinations "
+        "supported by at least two separate discussions. Explain the common user workflow or problem connecting the topics, "
+        "rather than simply listing two labels together. Use a table with Related topics, Supporting signal, Primary segment, "
+        "Combined user need, Nubra coverage and Product opportunity. End with the strongest combined opportunities that "
+        "would be missed if each topic were analysed separately. "
         + _insight_rules()
     )
 

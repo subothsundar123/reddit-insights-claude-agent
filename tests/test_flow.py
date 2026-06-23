@@ -35,6 +35,9 @@ class DailyFlowTests(unittest.TestCase):
         self.assertTrue(all(item["solution"] for item in first["product_opportunities"]))
         self.assertEqual(set(first["roadmap"]), {"Now", "Next", "Later"})
         self.assertIn("emerging_topic_candidates", first["analysis"])
+        self.assertIn("competitor_signals", first["analysis"])
+        self.assertIn("cross_topic_insights", first["analysis"])
+        self.assertTrue(first["analysis"]["cross_topic_insights"])
         from reddit_insights_agent.core import TOPICS
         self.assertIn("Fundamental data & research", TOPICS)
         self.assertIn("Scanners, indicators & alerts", TOPICS)
@@ -67,24 +70,28 @@ class DailyFlowTests(unittest.TestCase):
 
     def test_simple_analysis_prompts_are_available(self):
         from reddit_insights_agent.server import (
+            competitors,
             feature_gaps,
             feature_requests,
             improve_now,
             new_ideas,
             roadmap,
             trend_check,
+            topic_links,
             webinar_ideas,
         )
         prompts = {
+            "competitors": competitors(30),
             "feature_requests": feature_requests(30),
             "feature_gaps": feature_gaps(30),
             "trend_check": trend_check(7, 30),
+            "topic_links": topic_links(30),
             "improve_now": improve_now(30),
             "new_ideas": new_ideas(30),
             "webinar_ideas": webinar_ideas(30),
             "roadmap": roadmap(30),
         }
-        self.assertEqual(len(prompts), 7)
+        self.assertEqual(len(prompts), 9)
         self.assertTrue(all("chat" in text.lower() for text in prompts.values()))
         self.assertIn("Product, SDK, MCP and Support", prompts["improve_now"])
         self.assertIn("Already available", prompts["feature_gaps"])
@@ -93,6 +100,8 @@ class DailyFlowTests(unittest.TestCase):
         self.assertIn("Learning outcome", prompts["webinar_ideas"])
         self.assertIn("Suggested success measure", prompts["roadmap"])
         self.assertIn("emerging_topic_candidates", prompts["new_ideas"])
+        self.assertIn("competitor_signals", prompts["competitors"])
+        self.assertIn("cross_topic_insights", prompts["topic_links"])
         self.assertTrue(all("Start directly with the strongest insights" in text for text in prompts.values()))
         self.assertTrue(all("do not return a plan" in text for text in prompts.values()))
 
