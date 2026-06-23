@@ -46,17 +46,44 @@ class Source:
         self.url = os.getenv("INSIGHTS_DATA_REPO_URL")
         self.branch = os.getenv("INSIGHTS_DATA_BRANCH", "main")
         self.cache = local_root() / ".data-repo-cache"
+        self.warning: str | None = None
         if not self.local and not self.url:
             raise RuntimeError("Set INSIGHTS_DATA_REPO_PATH or INSIGHTS_DATA_REPO_URL")
 
     def refresh(self) -> None:
         if self.local:
             return
-        if not (self.cache / ".git").exists():
-            self.cache.parent.mkdir(parents=True, exist_ok=True)
-            subprocess.run(["git", "clone", "--filter=blob:none", "--no-checkout", "--branch", self.branch, self.url, str(self.cache)], check=True)
-        else:
-            subprocess.run(["git", "fetch", "--quiet", "origin", self.branch], cwd=self.cache, check=True)
+        env = os.environ.copy()
+        env["GIT_TERMINAL_PROMPT"] = "0"
+        timeout = int(os.getenv("INSIGHTS_GIT_TIMEOUT_SECONDS", "20"))
+        try:
+            if not (self.cache / ".git").exists():
+                self.cache.parent.mkdir(parents=True, exist_ok=True)
+                subprocess.run(
+                    ["git", "clone", "--filter=blob:none", "--no-checkout", "--branch", self.branch, self.url, str(self.cache)],
+                    check=True, timeout=timeout, stdin=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env,
+                )
+            else:
+                subprocess.run(
+                    ["git", "fetch", "--quiet", "origin", self.branch],
+                    cwd=self.cache, check=True, timeout=timeout, stdin=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env,
+                )
+        except (subprocess.TimeoutExpired, subprocess.CalledProcessError) as exc:
+            if (self.cache / ".git").exists():
+                self.warning = (
+                    f"Git refresh did not complete within {timeout} seconds; "
+                    "the latest verified local cache was used."
+                )
+            else:
+                detail = getattr(exc, "stderr", b"")
+                if isinstance(detail, bytes):
+                    detail = detail.decode("utf-8", errors="replace")
+                raise RuntimeError(
+                    "Unable to initialize the private data repository. "
+                    "Authenticate Git on this computer and retry. " + str(detail)
+                ) from exc
 
     def bytes(self, rel: str) -> bytes:
         rel = rel.replace("\\", "/")
@@ -108,7 +135,8 @@ def sync() -> dict[str, Any]:
     _write(state_path, state)
     import_local(root)
     return {"new_dumps": pulled, "available_through": max(state["dumps"]) if state["dumps"] else None,
-            "catalog_version": state.get("catalog_version"), "local_folder": str(root)}
+            "catalog_version": state.get("catalog_version"), "local_folder": str(root),
+            "warning": source.warning}
 
 
 def connect(root: pathlib.Path | None = None) -> sqlite3.Connection:
@@ -211,8 +239,34 @@ def _range_clause(days: int | None) -> tuple[str, list[Any]]:
 def search(query: str, limit: int = 20) -> list[dict[str, Any]]:
     db = connect()
     safe = " OR ".join(re.findall(r"[\w-]+", query)) or query
-    rows = db.execute("SELECT * FROM evidence_fts WHERE evidence_fts MATCH ? LIMIT ?", (safe, limit)).fetchall()
-    result = [dict(r) for r in rows]; db.close(); return result
+    rows = db.execute(
+        """SELECT kind, item_id, title,
+                  snippet(evidence_fts, 3, '[', ']', ' ... ', 45) AS excerpt,
+                  subreddit, collection_date, bm25(evidence_fts) AS rank
+           FROM evidence_fts
+           WHERE evidence_fts MATCH ?
+           ORDER BY rank
+           LIMIT ?""",
+        (safe, min(max(limit, 1), 50)),
+    ).fetchall()
+    result = []
+    seen_items: set[tuple[str, str]] = set()
+    for row in rows:
+        item = dict(row)
+        identity = (item["kind"], item["item_id"])
+        if identity in seen_items:
+            continue
+        seen_items.add(identity)
+        if item["kind"] == "post":
+            post = db.execute(
+                "SELECT permalink, score, num_comments, segment, source_method FROM posts WHERE id=?",
+                (item["item_id"],),
+            ).fetchone()
+            if post:
+                item.update(dict(post))
+        result.append(item)
+    db.close()
+    return result
 
 
 def feature_lookup(query: str) -> list[dict[str, Any]]:
