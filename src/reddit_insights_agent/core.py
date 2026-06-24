@@ -70,6 +70,11 @@ class Source:
                 )
             else:
                 subprocess.run(
+                    ["git", "remote", "set-url", "origin", self.url],
+                    cwd=self.cache, check=True, timeout=timeout, stdin=subprocess.DEVNULL,
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env,
+                )
+                subprocess.run(
                     ["git", "fetch", "--quiet", "origin", self.branch],
                     cwd=self.cache, check=True, timeout=timeout, stdin=subprocess.DEVNULL,
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=env,
@@ -588,14 +593,16 @@ def analyze(days: int | None = 30) -> dict[str, Any]:
         row["engagement"] = round(row["engagement"], 2)
     top_evidence = [{"title": p["title"], "segment": p["segment"], "score": p["score"], "comments": p["num_comments"], "url": p["permalink"]} for _, p in sorted(evidence, key=lambda item: item[0], reverse=True)[:15]]
     source_counts = Counter(p.get("source_method") or "unknown" for p in posts)
-    direct_count = sum(v for k, v in source_counts.items() if k != "web_search_review")
+    research_methods = {"web_search_review", "public_reddit_rss_review"}
+    research_count = sum(v for k, v in source_counts.items() if k in research_methods)
+    direct_count = len(posts) - research_count
     confidence = "high" if direct_count >= 200 else "medium" if direct_count >= 50 else "low"
     return {"period_days": days, "sample": {
                 "posts": len(posts), "direct_posts": direct_count,
-                "web_research_summaries": source_counts.get("web_search_review", 0),
+                "web_research_summaries": research_count,
                 "source_methods": dict(source_counts), "confidence": confidence
             }, "methodology_note": (
-                "Web-search research summaries have unknown Reddit vote metrics. "
+                "Web and RSS research summaries have unknown Reddit vote metrics. "
                 "They increase thematic coverage and mention frequency but add zero engagement weight."
             ), "topics": topics[:20],
             "feature_requests": requested[:15], "emerging_topic_candidates": emerging_candidates,

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "reddit-product-insights-agent"
-version = "1.0.0"
+version = "1.1.0"
 description = "Incremental GitHub sync, local evidence store, analysis engine, and Claude MCP"
 requires-python = ">=3.11"
 dependencies = ["mcp>=1.9"]

@@ -1,22 +1,51 @@
 # Reddit Product Insights Agent
 
-## Recommended: Claude Desktop
+## First-time setup
 
-On the lead's Windows computer:
+The easiest setup is designed for someone who receives a ZIP and does not want to configure Python or Claude manually.
+
+1. Download and extract the agent ZIP.
+2. Open the extracted folder in Claude Code.
+3. Enter this single prompt:
+
+> Set up Reddit Product Insights for Claude Desktop on this computer. Install everything, download the available data and verify the connector.
+
+Claude Code follows `CLAUDE.md` and runs the correct installer. On macOS or Linux the direct command is:
+
+```bash
+./install.sh
+```
+
+On macOS, `install.command` can also be opened directly from Finder. Windows continues to use:
 
 ```powershell
-git clone https://github.com/subothsundar123/reddit-insights-claude-agent.git
-cd reddit-insights-claude-agent
 powershell -ExecutionPolicy Bypass -File .\scripts\install_claude_desktop.ps1
 ```
+
+The macOS/Linux installer copies the agent into a stable user directory, creates an isolated Python environment, downloads and verifies all available data, backs up and merges Claude Desktop's configuration, and installs an 08:00 local-time daily updater with catch-up after shutdown or sleep.
 
 Completely quit and reopen Claude Desktop. In a new chat, confirm the `reddit-product-insights` connector under **+ → Connectors**, then say:
 
 > Give me today's daily product insights.
 
-Claude Code updates the shared data folder with `/update-insights-data`. Claude Desktop reads those verified local dumps and the local SQLite store, generates a decision-ready report, saves it locally, and offers follow-up analyses. Desktop does not access GitHub during report generation.
+Claude Desktop reads verified local dumps and the local SQLite store. The scheduled updater downloads new data separately, so report generation does not wait for GitHub.
 
-The installer supports both the classic installer and Microsoft Store versions of Claude Desktop. It backs up and merges the active configuration, preserving existing MCP servers and preferences.
+The installer preserves existing MCP servers and Claude preferences. Run `python3 scripts/diagnose.py` from the extracted folder to check the local data, connector path and scheduler.
+
+### GitHub access
+
+- A public data repository works without a GitHub account.
+- The current publisher repository is private. A first-time user therefore needs an approved GitHub account with read access or a per-device read-only SSH deploy key added by the repository owner.
+- Credentials must be configured through Git/GitHub's authentication flow. They are never stored in the ZIP, Claude configuration or project files.
+- If access without any GitHub identity is required, publish a separate sanitized read-only data feed over HTTPS. Do not make an internal feature catalogue public merely to simplify installation.
+
+A deploy key allows the lead to receive automatic updates without creating a GitHub account. Generate the key on the lead's computer, add only its public half to the publisher repository as a read-only deploy key, and install with:
+
+```bash
+./install.sh --repo-url git@github.com:subothsundar123/reddit-scraper-github-publisher.git
+```
+
+The repository owner must complete that one-time authorization; afterwards the 08:00 updater runs unattended.
 
 The full copy-ready prompt is available in `desktop/DAILY_INSIGHTS_PROMPT.md`.
 
@@ -36,12 +65,13 @@ Claude Desktop also exposes nine short prompts for focused work:
 
 These prompts use the same locally stored dumps and Nubra feature catalogue. Each prompt starts with the strongest insights, identifies the user problem, separates demand signals, checks current coverage, distinguishes product gaps from adoption gaps and recommends the smallest useful action. The engine also returns relevant unclassified discussions so new Nubra topics and ideas are not lost when they fall outside the standard categories. Outputs appear as concise text and tables directly in chat without describing the analysis process.
 
-## Shared-folder workflow
+## Automatic shared-folder workflow
 
-1. Open this repository in Claude Code and run `/update-insights-data`.
-2. New dumps and catalog versions are saved under `%USERPROFILE%\Documents\Nubra Product Insights`.
-3. Open Claude Desktop and run the daily prompt.
-4. Desktop analyses only the files in that shared folder, so reporting remains fast and does not depend on GitHub credentials.
+1. Setup performs the first sync immediately.
+2. At 08:00 local time, macOS `launchd` or a Linux `systemd` user timer checks for new dumps and catalogue updates.
+3. If the computer was off or asleep, the persistent job runs after the next login or wake.
+4. Only missing dumps are downloaded and every file is checksum-verified.
+5. Claude Desktop analyses the local files when the user requests insights.
 
 ## Claude Code alternative
 
@@ -51,7 +81,7 @@ These prompts use the same locally stored dumps and Nubra feature catalogue. Eac
 
 Claude Code users can invoke `/daily-insights`. Desktop users should use the natural-language prompt above because project `.claude/commands` are specific to Claude Code.
 
-Configure either `INSIGHTS_DATA_REPO_URL` (normal team usage) or `INSIGHTS_DATA_REPO_PATH` (local development). For the private GitHub repository, authenticate Git once on the lead's computer; credentials are never stored in this project.
+Configure either `INSIGHTS_DATA_REPO_URL` (normal team usage) or `INSIGHTS_DATA_REPO_PATH` (local development). Private repository authentication is handled by Git, outside this project.
 
 Claude Code discovers `.claude/commands` and the project charter automatically when opened in this folder. Claude Desktop can use `config/claude_desktop_config.example.json` to start the same MCP server.
 
@@ -59,7 +89,7 @@ The committed `.mcp.json` connects Claude Code to the local MCP server automatic
 
 ## Local data separation
 
-By default, pulled data, sync state, SQLite, and reports live in `%USERPROFILE%\Documents\Nubra Product Insights`, outside this code repository. Existing dates are never downloaded twice. Checksums prevent partial or altered imports.
+By default, pulled data, sync state and SQLite live in `~/Documents/Nubra Product Insights` (or the Windows Documents equivalent), outside this code repository. Existing dates are never downloaded twice. Checksums prevent partial or altered imports.
 
 ## Insight coverage
 
