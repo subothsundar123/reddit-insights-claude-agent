@@ -1,5 +1,13 @@
 # Reddit Product Insights Agent
 
+## Fast setup prompt for Linux
+
+If you are setting this up through Claude Code on Linux, use:
+
+[LINUX_SETUP_PROMPT.md](LINUX_SETUP_PROMPT.md)
+
+The user only needs to give Claude Code the repo link and ask it to follow the setup guide in this repository.
+
 ## Linux setup for Claude Code
 
 Use this path when Claude Desktop is not available.
