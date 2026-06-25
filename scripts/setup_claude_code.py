@@ -110,6 +110,26 @@ def install_cron(hour: int) -> bool:
     return True
 
 
+def install_launcher() -> pathlib.Path:
+    bin_dir = pathlib.Path.home() / ".local" / "bin"
+    bin_dir.mkdir(parents=True, exist_ok=True)
+    launcher = bin_dir / "reddit-insights"
+    launcher.write_text(
+        "\n".join(
+            [
+                "#!/usr/bin/env bash",
+                "set -euo pipefail",
+                f"cd {PROJECT_ROOT}",
+                "exec claude \"$@\"",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    launcher.chmod(0o755)
+    return launcher
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-url", default=DEFAULT_REPO)
@@ -130,6 +150,7 @@ def main() -> None:
 
     python_path = create_environment()
     initial_sync(python_path, args.repo_url, data_dir)
+    launcher = install_launcher()
 
     schedule = "not installed"
     if not args.no_schedule:
@@ -145,10 +166,12 @@ def main() -> None:
     print(f"Python environment: {python_path}")
     print(f"Local data folder: {data_dir}")
     print(f"Daily updater: {schedule}")
+    print(f"Launcher command: {launcher}")
+    if str(launcher.parent) not in os.getenv("PATH", "").split(os.pathsep):
+        print(f"Note: add {launcher.parent} to PATH if the reddit-insights command is not found.")
     print("\nNext step:")
-    print("1. Open this folder in terminal.")
-    print("2. Run: claude")
-    print("3. Type: /daily-insights")
+    print("1. Run: reddit-insights")
+    print("2. Type: /daily-insights")
 
 
 if __name__ == "__main__":

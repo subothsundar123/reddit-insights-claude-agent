@@ -22,10 +22,10 @@ Use this path when Claude Desktop is not available.
 
 The setup creates a local Python environment, pulls all available public dump data into `~/Documents/Nubra Product Insights`, and installs a daily morning updater using a systemd user timer or cron fallback.
 
-After setup, open Claude Code from this folder:
+After setup, launch the insights workspace from anywhere:
 
 ```bash
-claude
+reddit-insights
 ```
 
 Then use the project commands:
@@ -47,6 +47,12 @@ bash scripts/refresh-data.sh
 ```
 
 The data source is public, so no GitHub account, token or SSH key is required. If Git is not installed, the sync engine falls back to GitHub ZIP download.
+
+If the shell says `reddit-insights: command not found`, add `~/.local/bin` to `PATH`, then reopen the terminal:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
 
 ## First-time setup
 
@@ -122,7 +128,7 @@ These prompts use the same locally stored dumps and Nubra feature catalogue. Eac
 
 ## Claude Code alternative
 
-Claude Code users should run `./setup-code.sh` on Linux/macOS, then invoke `/daily-insights` or any focused command listed above. Desktop users should use the natural-language prompt above because project `.claude/commands` are specific to Claude Code.
+Claude Code users should run `./setup-code.sh` on Linux/macOS, then launch with `reddit-insights` and invoke `/daily-insights` or any focused command listed above. Desktop users should use the natural-language prompt above because project `.claude/commands` are specific to Claude Code.
 
 Configure either `INSIGHTS_DATA_REPO_URL` (normal team usage) or `INSIGHTS_DATA_REPO_PATH` (local development). Private repository authentication is handled by Git, outside this project.
 

@@ -15,9 +15,10 @@ What to do:
 3. Run the setup script provided by the repo.
 4. Sync all available dump data into the local data folder.
 5. Install the automatic daily updater if the system supports it.
-6. Verify that the local data is available.
-7. Verify that the Claude Code slash commands are ready.
-8. Tell me the one command I should run next for daily insights.
+6. Install the `reddit-insights` launcher command so I can open the project from anywhere.
+7. Verify that the local data is available.
+8. Verify that the Claude Code slash commands are ready.
+9. Tell me the one command I should run next for daily insights.
 
 Important:
 - This is for Claude Code on Linux, not Claude Desktop.
@@ -29,6 +30,12 @@ Important:
 ```
 
 After setup, open Claude Code inside the repo and run:
+
+```bash
+reddit-insights
+```
+
+Then run:
 
 ```text
 /daily-insights
