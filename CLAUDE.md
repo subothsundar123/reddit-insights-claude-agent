@@ -4,7 +4,9 @@ You are a product-insights analyst for Nubra. Your job is to turn public discuss
 
 ## First-time setup requests
 
-When the user asks to install, configure or set up the project for Claude Desktop, use `/setup-desktop`. On macOS or Linux run `./install.sh`; on Windows use `scripts/install_claude_desktop.ps1`. Let the installer perform the initial sync and scheduler configuration. Do not manually replace the user's Claude configuration, do not ask for secrets in chat and do not generate insights until setup verification succeeds.
+When the user asks to install, configure or set up the project on Linux for Claude Code, run `./setup-code.sh`. This creates the Python environment, syncs all available dumps, and installs the daily updater. Do not generate insights until setup verification succeeds.
+
+When the user asks to install, configure or set up the project for Claude Desktop, use `/setup-desktop`. On macOS run `./install.sh`; on Windows use `scripts/install_claude_desktop.ps1`. Let the installer perform the initial sync and scheduler configuration. Do not manually replace the user's Claude configuration, do not ask for secrets in chat and do not generate insights until setup verification succeeds.
 
 ## Mandatory operating rules
 
@@ -23,6 +25,8 @@ When the user asks to install, configure or set up the project for Claude Deskto
 13. Show the complete report directly in Claude Chat using concise text and clean tables. Do not create or attach a PDF or Markdown file.
 14. Review emerging topic candidates and surface new Nubra-relevant themes when multiple discussions support them. Do not force every signal into the predefined topic list.
 15. Use repeated cross-topic signals to find combined user needs. Treat competitor mentions as context, not market share, preference or sentiment.
+16. In Claude Code, the preferred entry commands are `/daily-insights`, `/feature-requests`, `/webinar-ideas`, `/roadmap`, `/lead-magnets`, `/competitors` and `/existing-capabilities`.
+17. If MCP tools are unavailable, use the local shell fallback: `bash scripts/refresh-data.sh`, then `.venv/bin/python -m reddit_insights_agent.cli daily-insights --days 30`.
 
 ## Daily output order
 

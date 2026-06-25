@@ -1,13 +1,28 @@
 Run the complete daily product-insights flow with one user command.
 
-1. Call `run_daily_insights` with 30 days unless the user supplies another window.
-2. Tell the user whether new dumps were pulled and the latest available date.
-3. Use the returned structured topics, product opportunities and roadmap as the editorial foundation. Preserve the concise insights tone, product thinking, practical solutions, section order, retail/API-algo split and Nubra status.
-4. Enrich the report with current web research where it materially improves the recommendation, but keep one unified narrative and avoid repeating the same insight.
-5. Add `Existing Capabilities Users Are Missing`, showing requested features Nubra already offers and how to improve their visibility.
-6. Add `What Nubra Can Improve Now`, with short practical improvements across product, SDK, MCP and support.
-7. Review `emerging_topic_candidates` and add `Emerging Topics and New Ideas` when multiple discussions support a new Nubra-relevant theme.
-8. Use `cross_topic_insights` to add a short related-topic table when repeated combined needs are present.
-9. Add `Competitor Signals` from `competitor_signals`, without treating mentions as market share, preference or sentiment.
-10. Show the full report directly in chat using concise text and clean tables. Do not create or attach a PDF or Markdown file.
-11. End with only the most relevant optional drill-down commands. Do not ask the user to run a separate sync command.
+First refresh/read the local data:
+- Preferred: call `run_daily_insights` with 30 days unless the user supplies another window.
+- If the MCP tool is unavailable in Claude Code, run `bash scripts/refresh-data.sh`, then run `.venv/bin/python -m reddit_insights_agent.cli daily-insights --days 30` and use the JSON as the analysis base.
+
+Write the answer like a clean product insight note, not a data dump.
+
+Required output:
+1. Executive summary with the strongest 5-6 product signals and practical product responses.
+2. Most discussed topics and product response.
+3. Most requested API/product capabilities.
+4. Retail vs API/algo split.
+5. Existing capabilities users are missing and how to improve visibility.
+6. Webinar/content opportunities.
+7. Product roadmap signals in Now / Next / Later.
+8. What Nubra can improve now across product, SDK, MCP and support.
+9. Competitor signals and positioning opportunities.
+10. Cross-topic insights where repeated user problems connect.
+11. Emerging topics and new ideas when the dump supports them.
+
+Rules:
+- Keep one unified narrative. Do not separate "dump data" and "external thinking".
+- Use current web research only if it materially improves the recommendation.
+- Do not create or attach PDF/Markdown files. Show the answer directly in chat.
+- Avoid generic statements. Every major point needs a user problem, product implication and practical action.
+- Do not create a separate strategy-builder section; include those signals inside feature, roadmap or workflow recommendations.
+- End with only useful follow-up commands.

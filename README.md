@@ -1,5 +1,45 @@
 # Reddit Product Insights Agent
 
+## Linux setup for Claude Code
+
+Use this path when Claude Desktop is not available.
+
+1. Clone or download this repository.
+2. Open the repository folder in a terminal.
+3. Run:
+
+```bash
+./setup-code.sh
+```
+
+The setup creates a local Python environment, pulls all available public dump data into `~/Documents/Nubra Product Insights`, and installs a daily morning updater using a systemd user timer or cron fallback.
+
+After setup, open Claude Code from this folder:
+
+```bash
+claude
+```
+
+Then use the project commands:
+
+| Command | Use |
+|---|---|
+| `/daily-insights` | Complete product insight report from the latest dumps |
+| `/feature-requests` | Requested API/product features and Nubra coverage |
+| `/webinar-ideas` | Webinar and content ideas from repeated user pain points |
+| `/roadmap` | Now / Next / Later product roadmap signals |
+| `/lead-magnets` | Lead magnet ideas for API, retail and algo users |
+| `/competitors` | Competitor mentions and positioning opportunities |
+| `/existing-capabilities` | Requested features Nubra may already have but users are missing |
+
+For manual data refresh anytime:
+
+```bash
+bash scripts/refresh-data.sh
+```
+
+The data source is public, so no GitHub account, token or SSH key is required. If Git is not installed, the sync engine falls back to GitHub ZIP download.
+
 ## First-time setup
 
 The easiest setup is designed for someone who receives a ZIP and does not want to configure Python or Claude manually.
@@ -35,9 +75,8 @@ The installer preserves existing MCP servers and Claude preferences. Run `python
 ### GitHub access
 
 - A public data repository works without a GitHub account.
-- The current publisher repository is private. A first-time user therefore needs an approved GitHub account with read access or a per-device read-only SSH deploy key added by the repository owner.
-- Credentials must be configured through Git/GitHub's authentication flow. They are never stored in the ZIP, Claude configuration or project files.
-- If access without any GitHub identity is required, publish a separate sanitized read-only data feed over HTTPS. Do not make an internal feature catalogue public merely to simplify installation.
+- The current publisher repository is public, so a first-time user does not need GitHub login.
+- If the repository becomes private later, credentials must be configured through Git/GitHub's authentication flow. They are never stored in the ZIP, Claude configuration or project files.
 
 A deploy key allows the lead to receive automatic updates without creating a GitHub account. Generate the key on the lead's computer, add only its public half to the publisher repository as a read-only deploy key, and install with:
 
@@ -75,11 +114,7 @@ These prompts use the same locally stored dumps and Nubra feature catalogue. Eac
 
 ## Claude Code alternative
 
-```powershell
-.\scripts\install.ps1
-```
-
-Claude Code users can invoke `/daily-insights`. Desktop users should use the natural-language prompt above because project `.claude/commands` are specific to Claude Code.
+Claude Code users should run `./setup-code.sh` on Linux/macOS, then invoke `/daily-insights` or any focused command listed above. Desktop users should use the natural-language prompt above because project `.claude/commands` are specific to Claude Code.
 
 Configure either `INSIGHTS_DATA_REPO_URL` (normal team usage) or `INSIGHTS_DATA_REPO_PATH` (local development). Private repository authentication is handled by Git, outside this project.
 

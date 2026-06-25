@@ -11,6 +11,9 @@ import re
 import shutil
 import sqlite3
 import subprocess
+import tempfile
+import urllib.request
+import zipfile
 from collections import Counter, defaultdict
 from itertools import combinations
 from typing import Any
@@ -47,12 +50,45 @@ class Source:
         self.url = os.getenv("INSIGHTS_DATA_REPO_URL")
         self.branch = os.getenv("INSIGHTS_DATA_BRANCH", "main")
         self.cache = local_root() / ".data-repo-cache"
+        self.zip_cache = local_root() / ".data-repo-zip"
         self.warning: str | None = None
         if not self.local and not self.url:
             raise RuntimeError("Set INSIGHTS_DATA_REPO_PATH or INSIGHTS_DATA_REPO_URL")
 
+    def _zip_url(self) -> str | None:
+        if not self.url:
+            return None
+        match = re.match(r"https://github\.com/([^/]+)/([^/.]+?)(?:\.git)?/?$", self.url)
+        if not match:
+            return None
+        owner, repo = match.groups()
+        return f"https://github.com/{owner}/{repo}/archive/refs/heads/{self.branch}.zip"
+
+    def _download_zip_cache(self) -> None:
+        zip_url = self._zip_url()
+        if not zip_url:
+            raise RuntimeError("ZIP fallback only supports public GitHub HTTPS repositories.")
+        self.zip_cache.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = pathlib.Path(tmp)
+            archive = tmp_path / "repo.zip"
+            urllib.request.urlretrieve(zip_url, archive)
+            with zipfile.ZipFile(archive) as zf:
+                zf.extractall(tmp_path / "extract")
+            roots = [p for p in (tmp_path / "extract").iterdir() if p.is_dir()]
+            if not roots:
+                raise RuntimeError("Downloaded GitHub ZIP did not contain a repository folder.")
+            if self.zip_cache.exists():
+                shutil.rmtree(self.zip_cache)
+            shutil.move(str(roots[0]), str(self.zip_cache))
+        self.local = self.zip_cache
+        self.warning = "Git was unavailable or failed, so the public GitHub ZIP feed was used."
+
     def refresh(self) -> None:
         if self.local:
+            return
+        if not shutil.which("git"):
+            self._download_zip_cache()
             return
         env = os.environ.copy()
         env["GIT_TERMINAL_PROMPT"] = "0"
@@ -86,10 +122,13 @@ class Source:
                     "the latest verified local cache was used."
                 )
             else:
-                raise RuntimeError(
-                    "Unable to initialize the private data repository. "
-                    "Authenticate Git on this computer and retry."
-                ) from exc
+                try:
+                    self._download_zip_cache()
+                except Exception as zip_exc:
+                    raise RuntimeError(
+                        "Unable to initialize the data repository through Git or public ZIP download. "
+                        "If the repository is private, authenticate Git on this computer and retry."
+                    ) from zip_exc
 
     def bytes(self, rel: str) -> bytes:
         rel = rel.replace("\\", "/")
@@ -789,7 +828,7 @@ def daily_insights(days: int = 30) -> dict[str, Any]:
     return {"sync": sync_result, "analysis": data, "product_opportunities": opportunities,
             "webinars": webinars, "roadmap": roadmap,
             "awareness_gaps": available_requests,
-            "available_commands": ["/api-insights", "/retail-insights", "/feature-demand", "/webinar-plan", "/product-roadmap", "/awareness-gaps", "/strategy-builder", "/competitor-insights", "/evidence", "/compare-periods"]}
+            "available_commands": ["/daily-insights", "/feature-requests", "/webinar-ideas", "/roadmap", "/lead-magnets", "/competitors", "/existing-capabilities"]}
 
 
 def render_markdown(sync_result, data, webinars, roadmap, awareness) -> str:
