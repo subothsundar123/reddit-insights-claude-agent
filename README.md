@@ -33,6 +33,11 @@ Then use the project commands:
 | Command | Use |
 |---|---|
 | `/daily-insights` | Complete product insight report from the latest dumps |
+| `/channel-insights` | Source-wise view across Reddit, GitHub, Hacker News, broker docs and future channels |
+| `/github-insights` | Developer/API demand from public GitHub issues and repos |
+| `/trend-check` | Rising, stable and emerging topics across available data |
+| `/content-plan` | Webinars, docs, lead magnets, demos and post ideas |
+| `/next-actions` | Execution-focused product, SDK, MCP, docs, support and marketing actions |
 | `/feature-requests` | Requested API/product features and Nubra coverage |
 | `/webinar-ideas` | Webinar and content ideas from repeated user pain points |
 | `/roadmap` | Now / Next / Later product roadmap signals |
@@ -142,6 +147,6 @@ By default, pulled data, sync state and SQLite live in `~/Documents/Nubra Produc
 
 ## Insight coverage
 
-The daily insights report uses simple, clean and product-focused language. It includes retail/API-algo topics, explicit feature requests, product implications, practical solutions, feature-availability reconciliation, webinar ideas, a Now/Next/Later roadmap, existing capabilities users are missing and immediate improvements across product, SDK, MCP and support. Related workflow and execution signals are incorporated into feature and roadmap recommendations instead of appearing as a separate section. The complete report is shown directly in Claude Chat using text and tables; no PDF or Markdown report file is created.
+The daily insights report uses simple, clean and product-focused language. It includes retail/API-algo topics, cross-channel public signals, explicit feature requests, product implications, practical solutions, feature-availability reconciliation, webinar ideas, a Now/Next/Later roadmap, existing capabilities users are missing and immediate improvements across product, SDK, MCP and support. Related workflow and execution signals are incorporated into feature and roadmap recommendations instead of appearing as a separate section. The complete report is shown directly in Claude Chat or Claude Code using text and tables; no PDF or Markdown report file is created.
 
 No Slack integration and no autonomous external messaging are included.

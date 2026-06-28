@@ -44,6 +44,11 @@ Then run:
 Other useful commands:
 
 ```text
+/channel-insights
+/github-insights
+/trend-check
+/content-plan
+/next-actions
 /feature-requests
 /webinar-ideas
 /roadmap

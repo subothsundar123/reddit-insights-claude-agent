@@ -238,34 +238,87 @@ def _segment(subreddit: str, text: str) -> str:
     return "api_algo" if subreddit.lower() == "indiaalgotrading" or re.search(api_terms, text, re.I) else "retail"
 
 
+def _signal_score(signal: dict[str, Any]) -> int:
+    engagement = signal.get("engagement") or {}
+    total = 0
+    for key in ("score", "points", "reactions", "likes", "reposts", "stars"):
+        try:
+            total += int(float(engagement.get(key) or 0))
+        except (TypeError, ValueError):
+            continue
+    return total
+
+
+def _signal_comments(signal: dict[str, Any]) -> int:
+    engagement = signal.get("engagement") or {}
+    try:
+        return int(float(engagement.get("comments") or 0))
+    except (TypeError, ValueError):
+        return 0
+
+
+def _signal_created_utc(signal: dict[str, Any]) -> float | None:
+    value = signal.get("created_at")
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str) and value:
+        try:
+            normalized = value.replace("Z", "+00:00")
+            return dt.datetime.fromisoformat(normalized).timestamp()
+        except ValueError:
+            return None
+    return None
+
+
 def import_local(root: pathlib.Path | None = None) -> None:
     root = root or local_root(); db = connect(root)
     state_path = root / "sync-state.json"
     if not state_path.exists(): return
     state = _load(state_path)
     for date in state.get("dumps", []):
-        if db.execute("SELECT 1 FROM dumps WHERE collection_date=?", (date,)).fetchone(): continue
         folder = root / "raw" / "daily-dumps" / date
-        with gzip.open(folder / "posts.jsonl.gz", "rt", encoding="utf-8") as f:
-            for line in f:
-                p = json.loads(line); text = f"{p.get('title','')} {p.get('body','')}"
-                db.execute("""INSERT OR REPLACE INTO posts(
-                    id, collection_date, subreddit, segment, title, body, flair, score,
-                    num_comments, created_utc, permalink, source_method, evidence_quality
-                ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""", (
-                    p["id"], date, p.get("subreddit"), _segment(p.get("subreddit", ""), text),
-                    p.get("title"), p.get("body"), p.get("flair"), p.get("score", 0),
-                    p.get("num_comments", 0), p.get("created_utc"), p.get("permalink"),
-                    p.get("source_method") or "reddit_collector",
-                    p.get("evidence_quality") or "direct_collection"))
-                db.execute("INSERT INTO evidence_fts VALUES(?,?,?,?,?,?)", ("post", p["id"], p.get("title"), p.get("body"), p.get("subreddit"), date))
-        with gzip.open(folder / "comments.jsonl.gz", "rt", encoding="utf-8") as f:
-            for line in f:
-                c = json.loads(line)
-                db.execute("INSERT OR REPLACE INTO comments VALUES(?,?,?,?,?,?)", (
-                    c["id"], c["post_id"], date, c.get("body"), c.get("score", 0), c.get("created_utc")))
-                db.execute("INSERT INTO evidence_fts VALUES(?,?,?,?,?,?)", ("comment", c["id"], "", c.get("body"), "", date))
-        db.execute("INSERT INTO dumps VALUES(?,?)", (date, dt.datetime.now(dt.timezone.utc).isoformat()))
+        imported = db.execute("SELECT 1 FROM dumps WHERE collection_date=?", (date,)).fetchone()
+        if not imported:
+            with gzip.open(folder / "posts.jsonl.gz", "rt", encoding="utf-8") as f:
+                for line in f:
+                    p = json.loads(line); text = f"{p.get('title','')} {p.get('body','')}"
+                    db.execute("""INSERT OR REPLACE INTO posts(
+                        id, collection_date, subreddit, segment, title, body, flair, score,
+                        num_comments, created_utc, permalink, source_method, evidence_quality
+                    ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""", (
+                        p["id"], date, p.get("subreddit"), _segment(p.get("subreddit", ""), text),
+                        p.get("title"), p.get("body"), p.get("flair"), p.get("score", 0),
+                        p.get("num_comments", 0), p.get("created_utc"), p.get("permalink"),
+                        p.get("source_method") or "reddit_collector",
+                        p.get("evidence_quality") or "direct_collection"))
+                    db.execute("INSERT INTO evidence_fts VALUES(?,?,?,?,?,?)", ("post", p["id"], p.get("title"), p.get("body"), p.get("subreddit"), date))
+            with gzip.open(folder / "comments.jsonl.gz", "rt", encoding="utf-8") as f:
+                for line in f:
+                    c = json.loads(line)
+                    db.execute("INSERT OR REPLACE INTO comments VALUES(?,?,?,?,?,?)", (
+                        c["id"], c["post_id"], date, c.get("body"), c.get("score", 0), c.get("created_utc")))
+                    db.execute("INSERT INTO evidence_fts VALUES(?,?,?,?,?,?)", ("comment", c["id"], "", c.get("body"), "", date))
+            db.execute("INSERT INTO dumps VALUES(?,?)", (date, dt.datetime.now(dt.timezone.utc).isoformat()))
+        signal_path = folder / "signals.jsonl.gz"
+        if signal_path.exists():
+            with gzip.open(signal_path, "rt", encoding="utf-8") as f:
+                for line in f:
+                    s = json.loads(line)
+                    signal_id = "sig_" + str(s.get("id"))
+                    if db.execute("SELECT 1 FROM posts WHERE id=?", (signal_id,)).fetchone():
+                        continue
+                    channel = f"{s.get('source') or 'public_signal'}:{s.get('channel') or 'unknown'}"
+                    text = f"{s.get('title','')} {s.get('body','')}"
+                    db.execute("""INSERT OR REPLACE INTO posts(
+                        id, collection_date, subreddit, segment, title, body, flair, score,
+                        num_comments, created_utc, permalink, source_method, evidence_quality
+                    ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""", (
+                        signal_id, date, channel, s.get("segment") or _segment(channel, text),
+                        s.get("title"), s.get("body"), ",".join(s.get("tags") or []),
+                        _signal_score(s), _signal_comments(s), _signal_created_utc(s), s.get("url"),
+                        s.get("source_method") or "public_signal_collector",
+                        s.get("evidence_quality") or "public_signal"))
+                    db.execute("INSERT INTO evidence_fts VALUES(?,?,?,?,?,?)", ("signal", signal_id, s.get("title"), s.get("body"), channel, date))
     catalog = root / "catalog" / "current.json"
     if catalog.exists():
         db.execute("DELETE FROM features")
@@ -498,7 +551,7 @@ def search(query: str, limit: int = 20) -> list[dict[str, Any]]:
         if identity in seen_items:
             continue
         seen_items.add(identity)
-        if item["kind"] == "post":
+        if item["kind"] in {"post", "signal"}:
             post = db.execute(
                 "SELECT permalink, score, num_comments, segment, source_method FROM posts WHERE id=?",
                 (item["item_id"],),
@@ -632,7 +685,10 @@ def analyze(days: int | None = 30) -> dict[str, Any]:
         row["engagement"] = round(row["engagement"], 2)
     top_evidence = [{"title": p["title"], "segment": p["segment"], "score": p["score"], "comments": p["num_comments"], "url": p["permalink"]} for _, p in sorted(evidence, key=lambda item: item[0], reverse=True)[:15]]
     source_counts = Counter(p.get("source_method") or "unknown" for p in posts)
-    research_methods = {"web_search_review", "public_reddit_rss_review"}
+    research_methods = {
+        "web_search_review", "public_reddit_rss_review", "github_search_api",
+        "hacker_news_algolia_api", "broker_docs_page_fetch", "public_signal_collector",
+    }
     research_count = sum(v for k, v in source_counts.items() if k in research_methods)
     direct_count = len(posts) - research_count
     confidence = "high" if direct_count >= 200 else "medium" if direct_count >= 50 else "low"
@@ -828,7 +884,7 @@ def daily_insights(days: int = 30) -> dict[str, Any]:
     return {"sync": sync_result, "analysis": data, "product_opportunities": opportunities,
             "webinars": webinars, "roadmap": roadmap,
             "awareness_gaps": available_requests,
-            "available_commands": ["/daily-insights", "/feature-requests", "/webinar-ideas", "/roadmap", "/lead-magnets", "/competitors", "/existing-capabilities"]}
+            "available_commands": ["/daily-insights", "/channel-insights", "/github-insights", "/trend-check", "/content-plan", "/next-actions", "/feature-requests", "/webinar-ideas", "/roadmap", "/lead-magnets", "/competitors", "/existing-capabilities"]}
 
 
 def render_markdown(sync_result, data, webinars, roadmap, awareness) -> str:

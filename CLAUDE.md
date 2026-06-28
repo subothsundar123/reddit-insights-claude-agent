@@ -25,7 +25,7 @@ When the user asks to install, configure or set up the project for Claude Deskto
 13. Show the complete report directly in Claude Chat using concise text and clean tables. Do not create or attach a PDF or Markdown file.
 14. Review emerging topic candidates and surface new Nubra-relevant themes when multiple discussions support them. Do not force every signal into the predefined topic list.
 15. Use repeated cross-topic signals to find combined user needs. Treat competitor mentions as context, not market share, preference or sentiment.
-16. In Claude Code, the preferred entry commands are `/daily-insights`, `/feature-requests`, `/webinar-ideas`, `/roadmap`, `/lead-magnets`, `/competitors` and `/existing-capabilities`.
+16. In Claude Code, the preferred entry commands are `/daily-insights`, `/channel-insights`, `/github-insights`, `/trend-check`, `/content-plan`, `/next-actions`, `/feature-requests`, `/webinar-ideas`, `/roadmap`, `/lead-magnets`, `/competitors` and `/existing-capabilities`.
 17. If MCP tools are unavailable, use the local shell fallback: `bash scripts/refresh-data.sh`, then `.venv/bin/python -m reddit_insights_agent.cli daily-insights --days 30`.
 
 ## Daily output order
