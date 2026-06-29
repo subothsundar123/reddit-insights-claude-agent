@@ -884,7 +884,7 @@ def daily_insights(days: int = 30) -> dict[str, Any]:
     return {"sync": sync_result, "analysis": data, "product_opportunities": opportunities,
             "webinars": webinars, "roadmap": roadmap,
             "awareness_gaps": available_requests,
-            "available_commands": ["/daily-insights", "/channel-insights", "/github-insights", "/trend-check", "/content-plan", "/next-actions", "/feature-requests", "/webinar-ideas", "/roadmap", "/lead-magnets", "/competitors", "/existing-capabilities"]}
+            "available_commands": ["/daily-insights", "/retail-feature-research", "/channel-insights", "/github-insights", "/trend-check", "/content-plan", "/next-actions", "/feature-requests", "/webinar-ideas", "/roadmap", "/lead-magnets", "/competitors", "/existing-capabilities"]}
 
 
 def render_markdown(sync_result, data, webinars, roadmap, awareness) -> str:

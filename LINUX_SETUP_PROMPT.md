@@ -39,12 +39,14 @@ Then run:
 
 ```text
 /daily-insights
+/retail-feature-research
 ```
 
 Other useful commands:
 
 ```text
 /channel-insights
+/retail-feature-research
 /github-insights
 /trend-check
 /content-plan

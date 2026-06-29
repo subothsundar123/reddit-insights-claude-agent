@@ -33,6 +33,7 @@ Then use the project commands:
 | Command | Use |
 |---|---|
 | `/daily-insights` | Complete product insight report from the latest dumps |
+| `/retail-feature-research` | Detailed retail analysis of upcoming Nubra features vs Reddit demand and competitors |
 | `/channel-insights` | Source-wise view across Reddit, GitHub, Hacker News, broker docs and future channels |
 | `/github-insights` | Developer/API demand from public GitHub issues and repos |
 | `/trend-check` | Rising, stable and emerging topics across available data |
