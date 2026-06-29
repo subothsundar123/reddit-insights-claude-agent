@@ -78,9 +78,11 @@ class DailyFlowTests(unittest.TestCase):
             competitors,
             feature_gaps,
             feature_requests,
+            get_nubra_app_context,
             improve_now,
             new_ideas,
             roadmap,
+            retail_feature_research,
             trend_check,
             topic_links,
             webinar_ideas,
@@ -93,10 +95,11 @@ class DailyFlowTests(unittest.TestCase):
             "topic_links": topic_links(30),
             "improve_now": improve_now(30),
             "new_ideas": new_ideas(30),
+            "retail_feature_research": retail_feature_research(30),
             "webinar_ideas": webinar_ideas(30),
             "roadmap": roadmap(30),
         }
-        self.assertEqual(len(prompts), 9)
+        self.assertEqual(len(prompts), 10)
         self.assertTrue(all("chat" in text.lower() for text in prompts.values()))
         self.assertIn("Product, SDK, MCP and Support", prompts["improve_now"])
         self.assertIn("Already available", prompts["feature_gaps"])
@@ -106,6 +109,8 @@ class DailyFlowTests(unittest.TestCase):
         self.assertIn("Suggested success measure", prompts["roadmap"])
         self.assertIn("emerging_topic_candidates", prompts["new_ideas"])
         self.assertIn("competitor_signals", prompts["competitors"])
+        self.assertIn("Feature Coverage Table", prompts["retail_feature_research"])
+        self.assertIn("Nubra Android App", get_nubra_app_context())
         self.assertIn("cross_topic_insights", prompts["topic_links"])
         self.assertTrue(all("Start directly with the strongest insights" in text for text in prompts.values()))
         self.assertTrue(all("do not return a plan" in text for text in prompts.values()))

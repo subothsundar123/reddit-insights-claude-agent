@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import pathlib
+
 from mcp.server.fastmcp import FastMCP
 from .core import compare_periods, daily_insights, feature_lookup, search
+
+ROOT = pathlib.Path(__file__).resolve().parents[2]
 
 mcp = FastMCP(
     "reddit-product-insights",
@@ -109,6 +113,12 @@ def search_evidence(query: str, limit: int = 20) -> list[dict]:
 def get_nubra_feature(query: str) -> list[dict]:
     """Check whether Nubra already has, partially has, plans, or lacks a capability."""
     return feature_lookup(query)
+
+@mcp.tool()
+def get_nubra_app_context() -> str:
+    """Read the current Nubra app context map for retail feature and app-surface analysis."""
+    path = ROOT / "context" / "nubra-app-context.md"
+    return path.read_text(encoding="utf-8") if path.exists() else ""
 
 @mcp.tool()
 def compare_insight_periods(short_days: int = 7, long_days: int = 30) -> dict:
@@ -283,6 +293,41 @@ def topic_links(days: int = 30) -> str:
         "Combined user need, Nubra coverage and Product opportunity. End with the strongest combined opportunities that "
         "would be missed if each topic were analysed separately. "
         + _insight_rules()
+    )
+
+@mcp.prompt()
+def retail_feature_research(days: int = 30) -> str:
+    """Detailed retail analysis of upcoming Nubra features vs retail demand and competitors."""
+    return (
+        f"Call run_daily_insights for the last {days} days. Also call get_nubra_app_context. "
+        "Start directly with the strongest insights and do not return a plan for doing the analysis. "
+        "Use search_evidence for these exact retail-focused source/query terms as needed: "
+        "retail_reddit_feature_research, nubra_feature_input, competitor_feature_research, "
+        "market_expectation_research, Revamp Marketing Features, Strategies Appstore, FO Analytics on Nubra, "
+        "Sensibull, Dhan, Opstra, AlgoTest, TradingView, StockEdge, IndiaOptionsSelling, IndianStockMarket, "
+        "IndianStreetBets, payoff, strategy builder, F&O analytics, option chain, margin, OI, IV, PCR, max pain, "
+        "straddle, strangle, premium, alerts, order notes, sector heatmap, FII-DII, stock comparison. "
+        "Use only retail-focused evidence and feature inputs. Do not include API-user, developer, GitHub, SDK, MCP, "
+        "broker API or technical platform analysis unless it directly affects a retail feature such as live data "
+        "freshness, option-chain trust, or execution confidence. "
+        "Use the app context to connect each recommendation to current Nubra app surfaces: Explore, Watchlist, "
+        "Portfolio, Orders, Compass, Option chain, Strategies, Scalper, Ask AI, Chart analyser, F&O analytics, "
+        "RSI/EMA Alerts, Options Heat Map, Commodities, Stock detail and Order entry. "
+        "Write a detailed product insight note with this exact structure: "
+        "1. Executive Summary; "
+        "2. What Retail Traders Are Discussing; "
+        "3. Feature Coverage Table with columns Market expectation, Nubra has/planned, Current app surface, "
+        "Competitors, Gap or improvement, Product priority; "
+        "4. Competitor Comparison; "
+        "5. What Nubra Should Highlight Strongly; "
+        "6. What Nubra Is Missing or Should Improve; "
+        "7. Now / Next / Later Product Priorities; "
+        "8. Best Retail Messaging Angles; "
+        "9. Final Takeaway. "
+        "For Nubra capabilities from attached feature documents, say planned unless the app context confirms the "
+        "feature is already visible. Separate true feature gaps from packaging, placement, visibility and explanation "
+        "gaps. Show the complete answer directly in chat using clean sections and tables. Do not create a PDF or file. "
+        "Do not mention methodology, sample size or confidence. Do not discuss API users."
     )
 
 def main() -> None:
