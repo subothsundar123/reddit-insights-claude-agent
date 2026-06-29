@@ -9,6 +9,12 @@ Use only retail-focused evidence and feature inputs:
 - `market_expectation_research`
 - retail-relevant competitor evidence from Sensibull, Dhan, Opstra, AlgoTest, TradingView, StockEdge, StockMock or similar retail/options tools
 
+Also read `context/nubra-app-context.md` before writing the answer. Use it as the current Nubra app reference for:
+- where features live in the app today
+- existing retail surfaces such as Explore, Option chain, Strategies, Chart analyser, F&O analytics, Options Heat Map, Ask AI, Alerts, Stock detail and Order entry
+- whether a requested/planned feature is already partly present in the app flow
+- practical recommendations on where the feature should appear
+
 Do not include API-user, developer, GitHub, SDK, MCP, WebSocket API or broker API analysis unless it directly affects a retail feature such as live data freshness, option-chain reliability or execution confidence. Keep the language retail/product focused.
 
 Write the answer as a detailed product insight note covering:
@@ -30,6 +36,7 @@ Write the answer as a detailed product insight note covering:
    For each major feature area, show:
    - Market expectation
    - Nubra has/planned
+   - Current app surface if visible in `context/nubra-app-context.md`
    - Competitors offering similar capability
    - Gap or improvement
    - Product priority

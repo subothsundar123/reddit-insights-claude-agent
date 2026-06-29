@@ -146,6 +146,10 @@ The committed `.mcp.json` connects Claude Code to the local MCP server automatic
 
 By default, pulled data, sync state and SQLite live in `~/Documents/Nubra Product Insights` (or the Windows Documents equivalent), outside this code repository. Existing dates are never downloaded twice. Checksums prevent partial or altered imports.
 
+## App context reference
+
+`context/nubra-app-context.md` stores the current Nubra Android app context map. The `/retail-feature-research` command uses it to connect market demand and upcoming feature analysis to actual app surfaces such as Explore, Option chain, Strategies, Chart analyser, F&O analytics, Options Heat Map, Ask AI, Alerts, Stock detail and Order entry.
+
 ## Insight coverage
 
 The daily insights report uses simple, clean and product-focused language. It includes retail/API-algo topics, cross-channel public signals, explicit feature requests, product implications, practical solutions, feature-availability reconciliation, webinar ideas, a Now/Next/Later roadmap, existing capabilities users are missing and immediate improvements across product, SDK, MCP and support. Related workflow and execution signals are incorporated into feature and roadmap recommendations instead of appearing as a separate section. The complete report is shown directly in Claude Chat or Claude Code using text and tables; no PDF or Markdown report file is created.
