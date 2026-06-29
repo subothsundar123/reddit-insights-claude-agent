@@ -71,13 +71,11 @@ Write the answer as a clean retail product analysis with this structure:
 6. What Is Still Missing or Needs Sharpening
    - Separate true product gaps from visibility, packaging, education and interpretation gaps.
 
-7. Product Recommendations
-   - Now / Next / Later actions.
+7. Launch and Education Angles
+   - Retail launch themes, demo ideas, webinar topics and messaging lines.
+   - Do not include Now / Next / Later timelines, time allocation, delivery phases or effort planning.
 
-8. Marketing and Webinar Angles
-   - Retail launch themes, webinar ideas and messaging lines.
-
-9. Final Takeaway
+8. Final Takeaway
    - 3 to 5 concise lines.
 
 Rules:
@@ -87,3 +85,4 @@ Rules:
 - Show the full answer directly in chat using clean sections and tables.
 - Treat source-document features as planned/upcoming unless the app context confirms they are already visible.
 - Start directly with insights, not methodology.
+- Do not include a product recommendation/timeline section.

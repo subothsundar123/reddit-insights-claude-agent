@@ -370,11 +370,11 @@ def new_feature_analysis(days: int = 30) -> str:
         "4. Competitor Benchmark - table with Feature area, Competitors with similar capability, What they do, Nubra implication; "
         "5. What Looks Strong for Nubra - strongest advantages from the upcoming set; "
         "6. What Is Still Missing or Needs Sharpening - practical gaps, interpretation gaps and packaging gaps; "
-        "7. Product Recommendations - Now / Next / Later with specific actions; "
-        "8. Marketing and Webinar Angles - topics and messages that can be used for launch/content; "
-        "9. Final Takeaway - 3 to 5 clean lines. "
+        "7. Launch and Education Angles - messages, demos and webinar topics that can be used without timeline allocation; "
+        "8. Final Takeaway - 3 to 5 clean lines. "
         "Keep the output direct, product-led and useful for a retail product/marketing discussion. Use clean tables and short "
-        "paragraphs. Do not mention methodology, sample size, confidence or tool calls. Do not create a PDF or Markdown file; "
+        "paragraphs. Do not include Now/Next/Later, time allocation, roadmap timing, delivery phases or effort planning. "
+        "Do not mention methodology, sample size, confidence or tool calls. Do not create a PDF or Markdown file; "
         "show the complete answer directly in chat."
     )
 
