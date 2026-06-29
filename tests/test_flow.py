@@ -31,6 +31,7 @@ class DailyFlowTests(unittest.TestCase):
         self.assertIn("hacker_news_algolia_api", first["analysis"]["sample"]["source_methods"])
         self.assertIn("broker_docs_page_fetch", first["analysis"]["sample"]["source_methods"])
         self.assertIn("/feature-requests", first["available_commands"])
+        self.assertIn("/new-feature-analysis", first["available_commands"])
         self.assertIn("/retail-feature-research", first["available_commands"])
         self.assertIn("/channel-insights", first["available_commands"])
         self.assertNotIn("report_markdown", first)
@@ -79,8 +80,10 @@ class DailyFlowTests(unittest.TestCase):
             feature_gaps,
             feature_requests,
             get_nubra_app_context,
+            get_retail_upcoming_features,
             improve_now,
             new_ideas,
+            new_feature_analysis,
             roadmap,
             retail_feature_research,
             trend_check,
@@ -95,11 +98,12 @@ class DailyFlowTests(unittest.TestCase):
             "topic_links": topic_links(30),
             "improve_now": improve_now(30),
             "new_ideas": new_ideas(30),
+            "new_feature_analysis": new_feature_analysis(30),
             "retail_feature_research": retail_feature_research(30),
             "webinar_ideas": webinar_ideas(30),
             "roadmap": roadmap(30),
         }
-        self.assertEqual(len(prompts), 10)
+        self.assertEqual(len(prompts), 11)
         self.assertTrue(all("chat" in text.lower() for text in prompts.values()))
         self.assertIn("Product, SDK, MCP and Support", prompts["improve_now"])
         self.assertIn("Already available", prompts["feature_gaps"])
@@ -110,6 +114,8 @@ class DailyFlowTests(unittest.TestCase):
         self.assertIn("emerging_topic_candidates", prompts["new_ideas"])
         self.assertIn("competitor_signals", prompts["competitors"])
         self.assertIn("Feature Coverage Table", prompts["retail_feature_research"])
+        self.assertIn("Upcoming Feature Map", prompts["new_feature_analysis"])
+        self.assertGreaterEqual(get_retail_upcoming_features()["count"], 10)
         self.assertIn("Nubra Android App", get_nubra_app_context())
         self.assertIn("cross_topic_insights", prompts["topic_links"])
         self.assertTrue(all("Start directly with the strongest insights" in text for text in prompts.values()))

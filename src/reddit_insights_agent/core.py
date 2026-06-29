@@ -238,6 +238,15 @@ def _segment(subreddit: str, text: str) -> str:
     return "api_algo" if subreddit.lower() == "indiaalgotrading" or re.search(api_terms, text, re.I) else "retail"
 
 
+def _normalize_segment(segment: str | None, channel: str, text: str) -> str:
+    raw = (segment or "").lower()
+    if raw == "api_algo":
+        return "api_algo"
+    if raw.startswith("retail"):
+        return "retail"
+    return _segment(channel, text)
+
+
 def _signal_score(signal: dict[str, Any]) -> int:
     engagement = signal.get("engagement") or {}
     total = 0
@@ -313,7 +322,7 @@ def import_local(root: pathlib.Path | None = None) -> None:
                         id, collection_date, subreddit, segment, title, body, flair, score,
                         num_comments, created_utc, permalink, source_method, evidence_quality
                     ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""", (
-                        signal_id, date, channel, s.get("segment") or _segment(channel, text),
+                        signal_id, date, channel, _normalize_segment(s.get("segment"), channel, text),
                         s.get("title"), s.get("body"), ",".join(s.get("tags") or []),
                         _signal_score(s), _signal_comments(s), _signal_created_utc(s), s.get("url"),
                         s.get("source_method") or "public_signal_collector",
@@ -571,6 +580,48 @@ def feature_lookup(query: str) -> list[dict[str, Any]]:
     db.close(); return found
 
 
+def retail_upcoming_features() -> dict[str, Any]:
+    sync_result = sync()
+    catalog_path = local_root() / "catalog" / "current.json"
+    features = []
+    if catalog_path.exists():
+        catalog = _load(catalog_path)
+        for feature in catalog.get("features", []):
+            category = feature.get("category") or ""
+            status = feature.get("status") or ""
+            availability = feature.get("availability") or ""
+            surfaces = feature.get("surfaces") or []
+            if not category.startswith("Retail App"):
+                continue
+            if status not in {"upcoming", "partial"} and availability not in {"new_build_evidence", "source_document_evidence"}:
+                continue
+            if any(str(surface).lower() in {"api/sdk", "mcp"} for surface in surfaces):
+                continue
+            features.append({
+                "id": feature.get("id"),
+                "name": feature.get("name"),
+                "category": category,
+                "status": status,
+                "availability": availability,
+                "surfaces": surfaces,
+                "capability": feature.get("capability"),
+                "notes": feature.get("notes"),
+                "user_benefit": feature.get("user_benefit"),
+                "priority": feature.get("priority"),
+                "aliases": feature.get("aliases", []),
+                "source": feature.get("source"),
+            })
+    priority_rank = {"high": 0, "medium": 1, "low": 2}
+    features.sort(key=lambda item: (item["category"], priority_rank.get(item.get("priority"), 3), item["name"]))
+    return {
+        "scope": "retail_only_upcoming_features",
+        "excluded": ["API/SDK-only features", "MCP/internal connector features"],
+        "count": len(features),
+        "features": features,
+        "sync": sync_result,
+    }
+
+
 def analyze(days: int | None = 30) -> dict[str, Any]:
     db = connect(); clause, params = _range_clause(days)
     posts = [dict(r) for r in db.execute("SELECT * FROM posts" + clause, params)]
@@ -583,6 +634,7 @@ def analyze(days: int | None = 30) -> dict[str, Any]:
     emerging_candidates: list[dict[str, Any]] = []
     evidence = []
     for p in posts:
+        p["segment"] = _normalize_segment(p.get("segment"), p.get("subreddit") or "", f"{p.get('title') or ''} {p.get('body') or ''}")
         text = f"{p['title']} {p['body']}".lower(); weight = _engagement(p["score"], p["num_comments"])
         technical_only = {
             "API reliability & WebSockets",
@@ -884,7 +936,7 @@ def daily_insights(days: int = 30) -> dict[str, Any]:
     return {"sync": sync_result, "analysis": data, "product_opportunities": opportunities,
             "webinars": webinars, "roadmap": roadmap,
             "awareness_gaps": available_requests,
-            "available_commands": ["/daily-insights", "/retail-feature-research", "/channel-insights", "/github-insights", "/trend-check", "/content-plan", "/next-actions", "/feature-requests", "/webinar-ideas", "/roadmap", "/lead-magnets", "/competitors", "/existing-capabilities"]}
+            "available_commands": ["/daily-insights", "/new-feature-analysis", "/retail-feature-research", "/channel-insights", "/github-insights", "/trend-check", "/content-plan", "/next-actions", "/feature-requests", "/webinar-ideas", "/roadmap", "/lead-magnets", "/competitors", "/existing-capabilities"]}
 
 
 def render_markdown(sync_result, data, webinars, roadmap, awareness) -> str:

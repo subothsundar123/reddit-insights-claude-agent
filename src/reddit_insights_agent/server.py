@@ -3,7 +3,7 @@ from __future__ import annotations
 import pathlib
 
 from mcp.server.fastmcp import FastMCP
-from .core import compare_periods, daily_insights, feature_lookup, search
+from .core import compare_periods, daily_insights, feature_lookup, retail_upcoming_features, search
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 
@@ -119,6 +119,11 @@ def get_nubra_app_context() -> str:
     """Read the current Nubra app context map for retail feature and app-surface analysis."""
     path = ROOT / "context" / "nubra-app-context.md"
     return path.read_text(encoding="utf-8") if path.exists() else ""
+
+@mcp.tool()
+def get_retail_upcoming_features() -> dict:
+    """Fetch the retail-only upcoming Nubra features list, excluding API/SDK-only and MCP/internal capabilities."""
+    return retail_upcoming_features()
 
 @mcp.tool()
 def compare_insight_periods(short_days: int = 7, long_days: int = 30) -> dict:
@@ -332,6 +337,45 @@ def retail_feature_research(days: int = 30) -> str:
         "feature is already visible. Separate true feature gaps from packaging, placement, visibility and explanation "
         "gaps. Show the complete answer directly in chat using clean sections and tables. Do not create a PDF or file. "
         "Do not mention methodology, sample size or confidence. Do not discuss API users."
+    )
+
+@mcp.prompt()
+def new_feature_analysis(days: int = 30) -> str:
+    """Retail-only analysis of Nubra's upcoming features against community demand and competitors."""
+    return (
+        f"Call get_retail_upcoming_features, run_daily_insights for the last {days} days, and get_nubra_app_context. "
+        "Start directly with the strongest insights and do not return a plan for doing the analysis. "
+        "Use search_evidence for retail-only signals around these upcoming feature themes: "
+        "trader persona modes, Investor mode, Option Buyer mode, Option Seller mode, option-chain filters, "
+        "custom option-chain layout, OI bars, PCR, Total Call OI, Total Put OI, Max Pain, ITM highlight, VWAP, "
+        "premium, OI buildup, volume spike, IV, IV change, Greeks, bid-ask spread, OI concentration, one-click trade, "
+        "F&O analytics, every-stock F&O analytics, OI vs spot, IV vs spot, premium vs spot, straddle premium, "
+        "strangle premium, futures analytics by expiry, buy/sell actionables, strategy appstore, ready-made strategies, "
+        "market view, trader outcome, instrument set, payoff, probability of profit, max profit, max loss, breakeven, "
+        "margin benefit, SPAN, exposure, live risk update, leg-by-leg strategy builder, cross-instrument hedge, "
+        "scalper templates, homepage customisation, sector heatmap, FII-DII, global indices, stock comparison, "
+        "peer comparison, order notes, SL-TP, instant exit, OI alerts and volume alerts. "
+        "Use only retail-focused evidence. Do not include API users, SDK, MCP, GitHub developer repositories, "
+        "broker API, WebSocket API or technical platform analysis. If technical reliability affects a retail feature, "
+        "translate it into retail terms such as live data freshness, execution confidence or option-chain trust. "
+        "Treat every upcoming feature as planned/upcoming unless get_nubra_app_context clearly confirms it is already "
+        "visible in the current app. Separate true feature gaps from visibility, packaging, education and interpretation gaps. "
+        "For competitor comparison, focus on retail brokers/tools such as Sensibull, Dhan, Opstra, AlgoTest, TradingView, "
+        "StockEdge, StockMock, NiftyTrader and Moneycontrol where evidence exists. Do not claim competitor strength without "
+        "a supporting signal. "
+        "Write the answer with this exact structure: "
+        "1. Executive Summary - the biggest retail product conclusions; "
+        "2. Upcoming Feature Map - table with Feature, User problem solved, Nubra status/surface, Why it matters, Priority; "
+        "3. Community Demand Check - table with Feature theme, What traders discuss, Demand strength, Evidence signal, Product read; "
+        "4. Competitor Benchmark - table with Feature area, Competitors with similar capability, What they do, Nubra implication; "
+        "5. What Looks Strong for Nubra - strongest advantages from the upcoming set; "
+        "6. What Is Still Missing or Needs Sharpening - practical gaps, interpretation gaps and packaging gaps; "
+        "7. Product Recommendations - Now / Next / Later with specific actions; "
+        "8. Marketing and Webinar Angles - topics and messages that can be used for launch/content; "
+        "9. Final Takeaway - 3 to 5 clean lines. "
+        "Keep the output direct, product-led and useful for a retail product/marketing discussion. Use clean tables and short "
+        "paragraphs. Do not mention methodology, sample size, confidence or tool calls. Do not create a PDF or Markdown file; "
+        "show the complete answer directly in chat."
     )
 
 def main() -> None:
