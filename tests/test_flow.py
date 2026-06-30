@@ -38,6 +38,7 @@ class DailyFlowTests(unittest.TestCase):
         self.assertIn("/retail-feature-research", first["available_commands"])
         self.assertIn("/channel-insights", first["available_commands"])
         self.assertIn("/youtube-insights", first["available_commands"])
+        self.assertIn("/seo-insights", first["available_commands"])
         self.assertNotIn("report_markdown", first)
         self.assertFalse(list((self.temp / "reports").glob("*.md")))
         self.assertFalse(list((self.temp / "reports").glob("*.pdf")))
@@ -116,11 +117,14 @@ class DailyFlowTests(unittest.TestCase):
         from reddit_insights_agent.core import connector_status, daily_insights
         daily_insights(30)
         result = connector_status()
-        self.assertEqual(result["version"], "2.3.0")
+        self.assertEqual(result["version"], "2.4.0")
         self.assertEqual(result["status"], "ready")
         self.assertGreater(result["counts"]["records"], 0)
         self.assertGreater(result["counts"]["features"], 0)
+        self.assertGreaterEqual(result["counts"]["seo_keywords"], 1000)
+        self.assertGreaterEqual(result["counts"]["seo_clusters"], 100)
         self.assertIn("ask_product_insights", result["available_tools"])
+        self.assertIn("get_seo_keywords", result["available_tools"])
 
     def test_daily_prompt_returns_chat_report_only(self):
         from reddit_insights_agent.server import daily_product_insights
@@ -147,6 +151,7 @@ class DailyFlowTests(unittest.TestCase):
             new_feature_analysis,
             roadmap,
             retail_feature_research,
+            seo_insights,
             trend_check,
             topic_links,
             youtube_insights,
@@ -165,10 +170,11 @@ class DailyFlowTests(unittest.TestCase):
             "new_ideas": new_ideas(30),
             "new_feature_analysis": new_feature_analysis(30),
             "retail_feature_research": retail_feature_research(30),
+            "seo_insights": seo_insights(25, "retail", "option"),
             "webinar_ideas": webinar_ideas(30),
             "roadmap": roadmap(30),
         }
-        self.assertEqual(len(prompts), 14)
+        self.assertEqual(len(prompts), 15)
         self.assertTrue(all("chat" in text.lower() for name, text in prompts.items() if name != "connector_health"))
         self.assertIn("ask_product_insights", prompts["ask_product_question"])
         self.assertIn("get_connector_status", prompts["connector_health"])
@@ -187,8 +193,18 @@ class DailyFlowTests(unittest.TestCase):
         self.assertIn("cross_topic_insights", prompts["topic_links"])
         self.assertIn("YouTube", prompts["youtube_insights"])
         self.assertIn("comments", prompts["youtube_insights"])
+        self.assertIn("get_seo_keywords", prompts["seo_insights"])
+        self.assertIn("Highest-Value SEO Opportunities", prompts["seo_insights"])
         analysis_prompts = [text for name, text in prompts.items() if name not in {"connector_health"}]
         self.assertTrue(all("Start directly with the strongest insights" in text for text in analysis_prompts))
         self.assertTrue(all("do not return a plan" in text for text in analysis_prompts))
+
+    def test_seo_keyword_catalog_syncs(self):
+        from reddit_insights_agent.core import seo_keyword_catalog
+        result = seo_keyword_catalog(limit=10, segment="retail")
+        self.assertTrue(result["available"])
+        self.assertGreaterEqual(result["summary"]["included_rows"]["priority_keywords"], 1000)
+        self.assertTrue(result["priority_keywords"])
+        self.assertTrue(result["search_seed_keywords"]["retail"])
 
 if __name__ == "__main__": unittest.main()

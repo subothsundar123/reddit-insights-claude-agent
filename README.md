@@ -44,6 +44,7 @@ Then use the project commands:
 | `/channel-insights` | Source-wise view across Reddit, GitHub, Hacker News, broker docs and future channels |
 | `/github-insights` | Developer/API demand from public GitHub issues and repos |
 | `/youtube-insights` | Retail/API YouTube comment signals, reach metrics, competitor mentions and content ideas |
+| `/seo-insights` | Marketing SEO keyword opportunities mapped to Nubra features, competitors and community demand |
 | `/trend-check` | Rising, stable and emerging topics across available data |
 | `/content-plan` | Webinars, docs, lead magnets, demos and post ideas |
 | `/next-actions` | Execution-focused product, SDK, MCP, docs, support and marketing actions |
@@ -155,6 +156,7 @@ Claude Desktop also exposes reusable prompts for focused work:
 - `competitors` - competitor mentions, related user needs and supported opportunities
 - `topic_links` - combined opportunities where discussion themes repeatedly overlap
 - `youtube_insights` - YouTube text/comment signals split into retail and API/algo views
+- `seo_insights` - marketing SEO keyword opportunities mapped to product, competitor and community demand
 
 These prompts use the same locally stored dumps and Nubra feature catalogue. Each prompt starts with the strongest insights, identifies the user problem, separates demand signals, checks current coverage, distinguishes product gaps from adoption gaps and recommends the smallest useful action. The engine also returns relevant unclassified discussions so new Nubra topics and ideas are not lost when they fall outside the standard categories. Outputs appear as concise text and tables directly in chat without describing the analysis process.
 
@@ -169,6 +171,7 @@ These prompts use the same locally stored dumps and Nubra feature catalogue. Eac
 - Opportunities are scored using recurrence, engagement, segment reach, connected user needs, competitor context and Nubra relevance.
 - Trend output compares recent daily rates with the preceding period instead of comparing unequal raw totals.
 - Every universal answer includes practical follow-up questions for deeper evidence, competitor review, product requirements or content planning.
+- Marketing SEO keyword intelligence from the Nubra priority keyword workbook is synced as a compact catalog and used by `/seo-insights` for SEO, content, competitor and product mapping.
 
 Useful CLI checks:
 

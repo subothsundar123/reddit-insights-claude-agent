@@ -19,7 +19,7 @@ from itertools import combinations
 from typing import Any
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-CONNECTOR_VERSION = "2.3.0"
+CONNECTOR_VERSION = "2.4.0"
 CACHE_SCHEMA_VERSION = 1
 DEFAULT_SYNC_MAX_AGE_HOURS = 6
 
@@ -118,6 +118,21 @@ def _local_data_health(root: pathlib.Path) -> dict[str, Any]:
                 issues.append("feature catalog has an invalid structure")
         except (OSError, json.JSONDecodeError, TypeError, AttributeError):
             issues.append("feature catalog is unreadable")
+
+    seo_catalog = root / "marketing-keywords" / "current.json"
+    expected_seo = state.get("seo_catalog_sha256")
+    if expected_seo:
+        if not seo_catalog.exists():
+            issues.append("SEO keyword catalog is missing")
+        else:
+            try:
+                if _sha(seo_catalog) != expected_seo:
+                    issues.append("SEO keyword catalog checksum does not match")
+                seo_payload = _load(seo_catalog)
+                if not isinstance(seo_payload.get("search_seed_keywords"), dict):
+                    issues.append("SEO keyword catalog has an invalid structure")
+            except (OSError, json.JSONDecodeError, TypeError, AttributeError):
+                issues.append("SEO keyword catalog is unreadable")
 
     return {
         "healthy": not issues,
@@ -331,6 +346,26 @@ def sync(force_remote: bool = False) -> dict[str, Any]:
             state["catalog_version"] = catalog_manifest["current_version"]
             state["catalog_sha256"] = catalog_manifest["sha256"]
 
+        try:
+            seo_manifest = source.json("marketing-keywords/manifest.json")
+        except Exception:
+            seo_manifest = None
+        if seo_manifest:
+            seo_destination = root / "marketing-keywords" / "current.json"
+            seo_valid = (
+                seo_destination.exists()
+                and state.get("seo_catalog_sha256") == seo_manifest.get("sha256")
+                and _sha(seo_destination) == seo_manifest.get("sha256")
+            )
+            if seo_manifest["current_version"] != state.get("seo_catalog_version") or not seo_valid:
+                seo_destination.parent.mkdir(parents=True, exist_ok=True)
+                seo_destination.write_bytes(source.bytes(seo_manifest["path"]))
+                if _sha(seo_destination) != seo_manifest["sha256"]:
+                    seo_destination.unlink(missing_ok=True)
+                    raise RuntimeError("SEO keyword catalog checksum mismatch")
+                state["seo_catalog_version"] = seo_manifest["current_version"]
+                state["seo_catalog_sha256"] = seo_manifest["sha256"]
+
         state["dumps"] = sorted(set(state["dumps"]))
         state["last_checked_at"] = dt.datetime.now(dt.timezone.utc).isoformat()
         _write(state_path, state)
@@ -528,6 +563,47 @@ PRODUCT_DISCOVERY_TERMS = {
     "automation", "backtest", "broker", "platform", "dashboard", "documentation", "support",
     "login", "session", "security", "research", "fundamental", "option", "risk", "pricing",
 }
+
+
+def seo_keyword_catalog(limit: int = 25, segment: str = "all", theme: str | None = None) -> dict[str, Any]:
+    sync_result = sync()
+    path = local_root() / "marketing-keywords" / "current.json"
+    if not path.exists():
+        return {
+            "available": False,
+            "summary": "SEO keyword catalog is not synced yet.",
+            "sync": sync_result,
+            "priority_clusters": [],
+            "priority_keywords": [],
+            "option_chain_keywords": [],
+            "programmatic_pages": [],
+            "search_seed_keywords": {},
+        }
+    payload = _load(path)
+    limit = min(max(int(limit or 25), 1), 100)
+    segment_norm = (segment or "all").lower()
+    theme_norm = (theme or "").lower()
+
+    def keep(row: dict[str, Any]) -> bool:
+        if segment_norm not in {"all", "", "both"} and str(row.get("segment") or "").lower() != segment_norm:
+            return False
+        if theme_norm:
+            haystack = " ".join(str(row.get(key) or "") for key in ("theme", "cluster_topic", "programmatic_theme", "keyword"))
+            if theme_norm not in haystack.lower():
+                return False
+        return True
+
+    return {
+        "available": True,
+        "source": payload.get("source"),
+        "summary": payload.get("summary", {}),
+        "search_seed_keywords": payload.get("search_seed_keywords", {}),
+        "priority_clusters": [row for row in payload.get("priority_clusters", []) if keep(row)][:limit],
+        "priority_keywords": [row for row in payload.get("priority_keywords", []) if keep(row)][:limit],
+        "option_chain_keywords": [row for row in payload.get("option_chain_keywords", []) if keep(row)][:limit],
+        "programmatic_pages": [row for row in payload.get("programmatic_pages", []) if keep(row)][:limit],
+        "sync": sync_result,
+    }
 
 COMPETITORS = {
     "Zerodha": ["zerodha", "kite connect", "kite api"],
@@ -1208,7 +1284,7 @@ def connector_status(refresh: bool = False) -> dict[str, Any]:
     root.mkdir(parents=True, exist_ok=True)
     sync_result = sync(force_remote=True) if refresh else None
     health = _local_data_health(root)
-    counts = {"records": 0, "posts": 0, "comments": 0, "features": 0, "upcoming_features": 0}
+    counts = {"records": 0, "posts": 0, "comments": 0, "features": 0, "upcoming_features": 0, "seo_keywords": 0, "seo_clusters": 0}
     db_path = root / "insights.sqlite3"
     if db_path.exists():
         db = connect(root)
@@ -1220,6 +1296,14 @@ def connector_status(refresh: bool = False) -> dict[str, Any]:
         ).fetchone()[0]
         counts["records"] = counts["posts"] + counts["comments"]
         db.close()
+    seo_path = root / "marketing-keywords" / "current.json"
+    if seo_path.exists():
+        try:
+            seo = _load(seo_path)
+            counts["seo_keywords"] = len(seo.get("priority_keywords", []))
+            counts["seo_clusters"] = len(seo.get("priority_clusters", []))
+        except (OSError, json.JSONDecodeError, TypeError):
+            pass
     cache_files = list((root / "cache").glob("daily-insights-*.json")) if (root / "cache").exists() else []
     return {
         "connector": "reddit-product-insights",
@@ -1238,7 +1322,7 @@ def connector_status(refresh: bool = False) -> dict[str, Any]:
         "available_tools": [
             "ask_product_insights", "run_daily_insights", "search_evidence",
             "get_nubra_feature", "get_retail_upcoming_features",
-            "compare_insight_periods", "get_connector_status", "refresh_insights_data",
+            "get_seo_keywords", "compare_insight_periods", "get_connector_status", "refresh_insights_data",
         ],
     }
 
@@ -1454,7 +1538,7 @@ def daily_insights(days: int = 30, use_cache: bool = True) -> dict[str, Any]:
         "awareness_gaps": available_requests,
         "available_commands": [
             "/update-connector", "/ask-insights", "/status", "/daily-insights", "/new-feature-analysis",
-            "/retail-feature-research", "/channel-insights", "/github-insights", "/youtube-insights",
+            "/retail-feature-research", "/channel-insights", "/github-insights", "/youtube-insights", "/seo-insights",
             "/trend-check", "/content-plan", "/next-actions", "/feature-requests",
             "/webinar-ideas", "/roadmap", "/lead-magnets", "/competitors",
             "/existing-capabilities",

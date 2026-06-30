@@ -11,6 +11,7 @@ from .core import (
     feature_lookup,
     retail_upcoming_features,
     search,
+    seo_keyword_catalog,
     sync,
 )
 
@@ -161,6 +162,11 @@ def get_nubra_app_context() -> str:
 def get_retail_upcoming_features() -> dict:
     """Fetch the retail-only upcoming Nubra features list, excluding API/SDK-only and MCP/internal capabilities."""
     return retail_upcoming_features()
+
+@mcp.tool()
+def get_seo_keywords(limit: int = 25, segment: str = "all", theme: str = "") -> dict:
+    """Fetch priority SEO keyword intelligence, competitor page clusters and programmatic page ideas."""
+    return seo_keyword_catalog(limit=limit, segment=segment, theme=theme or None)
 
 @mcp.tool()
 def compare_insight_periods(short_days: int = 7, long_days: int = 30) -> dict:
@@ -414,6 +420,28 @@ def youtube_insights(days: int = 30) -> str:
         "7. Product Actions. "
         "If no YouTube records are available yet, say that the YouTube agent is ready but no YouTube dump has been synced, "
         "then list the exact data it will use once YOUTUBE_API_KEY is configured. "
+        + _insight_rules()
+    )
+
+@mcp.prompt()
+def seo_insights(limit: int = 25, segment: str = "retail", theme: str = "") -> str:
+    """Use marketing SEO keywords to find content, product and competitor opportunities."""
+    return (
+        f"Call get_seo_keywords with limit={limit}, segment='{segment}' and theme='{theme}'. "
+        "Also call run_daily_insights for 30 days and use search_evidence for the strongest SEO themes returned, especially "
+        "option chain, FII DII, PCR, max pain, charts, strategy builder, broker comparison, alerts, scanners and Nubra. "
+        "Connect SEO keyword opportunity with product and community evidence. Do not treat keyword volume alone as demand; "
+        "combine volume, priority cluster, competitor coverage, Nubra feature relevance and user discussion signals. "
+        "Write the answer with this structure: "
+        "1. Executive Summary; "
+        "2. Highest-Value SEO Opportunities - table with Keyword/cluster, Search intent, Volume/traffic signal, Competitor ranking, Nubra relevance, Recommended action; "
+        "3. Product Feature Mapping - which Nubra existing/upcoming features each keyword can support; "
+        "4. Competitor Page Gaps - what competitor pages exist and what Nubra should learn; "
+        "5. Programmatic Page Opportunities - scalable pages worth creating; "
+        "6. Webinar, Lead Magnet and Content Ideas; "
+        "7. What to Prioritize Now. "
+        "Keep it product and marketing focused. For retail segment, exclude API/developer-only conclusions unless the keyword explicitly relates to API/algo. "
+        "Use clean tables and short practical recommendations. Do not create a file; show the answer directly in chat. "
         + _insight_rules()
     )
 
