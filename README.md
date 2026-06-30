@@ -43,6 +43,7 @@ Then use the project commands:
 | `/retail-feature-research` | Detailed retail analysis of upcoming Nubra features vs Reddit demand and competitors |
 | `/channel-insights` | Source-wise view across Reddit, GitHub, Hacker News, broker docs and future channels |
 | `/github-insights` | Developer/API demand from public GitHub issues and repos |
+| `/youtube-insights` | Retail/API YouTube comment signals, reach metrics, competitor mentions and content ideas |
 | `/trend-check` | Rising, stable and emerging topics across available data |
 | `/content-plan` | Webinars, docs, lead magnets, demos and post ideas |
 | `/next-actions` | Execution-focused product, SDK, MCP, docs, support and marketing actions |
@@ -141,6 +142,7 @@ Claude Desktop also exposes reusable prompts for focused work:
 - `new_ideas` - emerging Nubra-relevant topics outside the standard categories
 - `competitors` - competitor mentions, related user needs and supported opportunities
 - `topic_links` - combined opportunities where discussion themes repeatedly overlap
+- `youtube_insights` - YouTube text/comment signals split into retail and API/algo views
 
 These prompts use the same locally stored dumps and Nubra feature catalogue. Each prompt starts with the strongest insights, identifies the user problem, separates demand signals, checks current coverage, distinguishes product gaps from adoption gaps and recommends the smallest useful action. The engine also returns relevant unclassified discussions so new Nubra topics and ideas are not lost when they fall outside the standard categories. Outputs appear as concise text and tables directly in chat without describing the analysis process.
 

@@ -368,6 +368,32 @@ def topic_links(days: int = 30) -> str:
     )
 
 @mcp.prompt()
+def youtube_insights(days: int = 30) -> str:
+    """Analyse YouTube text signals across retail and API/algo partitions."""
+    return (
+        f"Call run_daily_insights for the last {days} days and search_evidence for youtube, youtube_data_api, "
+        "public_youtube_api, video_comment_thread, views_per_day, comments_per_day, Nubra API, Nubra trading app, "
+        "option chain, broker API, websocket, strategy builder, payoff and algo trading. "
+        "Use YouTube as a product-signal channel, not as a popularity contest. Separate retail signals from API/algo "
+        "signals using the stored segment and platform partition. Focus on what comments reveal: feature requests, "
+        "pain points, questions, competitor comparisons, repeated confusion and lead-magnet or webinar opportunities. "
+        "Use video metrics only to understand reach and discussion intensity: views, comments, likes, views per day, "
+        "comments per day, engagement rate, recent comments, feature-request count, pain-point count and question count. "
+        "Do not mention thumbnails or media assets. "
+        "Write the answer with this structure: "
+        "1. Executive Summary; "
+        "2. Retail YouTube Signals - table with Topic, User problem, Comment signal, Product implication, Nubra response; "
+        "3. API/Algo YouTube Signals - table with Topic, Developer problem, Comment signal, Product implication, Nubra response; "
+        "4. Videos/Channels Worth Tracking - explain why each matters using reach and discussion intensity; "
+        "5. Competitor and Nubra Mentions - what users compare and what Nubra should learn; "
+        "6. Content, Webinar and Lead-Magnet Ideas; "
+        "7. Product Actions. "
+        "If no YouTube records are available yet, say that the YouTube agent is ready but no YouTube dump has been synced, "
+        "then list the exact data it will use once YOUTUBE_API_KEY is configured. "
+        + _insight_rules()
+    )
+
+@mcp.prompt()
 def retail_feature_research(days: int = 30) -> str:
     """Detailed retail analysis of upcoming Nubra features vs retail demand and competitors."""
     return (

@@ -37,6 +37,7 @@ class DailyFlowTests(unittest.TestCase):
         self.assertIn("/update-connector", first["available_commands"])
         self.assertIn("/retail-feature-research", first["available_commands"])
         self.assertIn("/channel-insights", first["available_commands"])
+        self.assertIn("/youtube-insights", first["available_commands"])
         self.assertNotIn("report_markdown", first)
         self.assertFalse(list((self.temp / "reports").glob("*.md")))
         self.assertFalse(list((self.temp / "reports").glob("*.pdf")))
@@ -115,7 +116,7 @@ class DailyFlowTests(unittest.TestCase):
         from reddit_insights_agent.core import connector_status, daily_insights
         daily_insights(30)
         result = connector_status()
-        self.assertEqual(result["version"], "2.1.0")
+        self.assertEqual(result["version"], "2.2.0")
         self.assertEqual(result["status"], "ready")
         self.assertGreater(result["counts"]["records"], 0)
         self.assertGreater(result["counts"]["features"], 0)
@@ -145,6 +146,7 @@ class DailyFlowTests(unittest.TestCase):
             retail_feature_research,
             trend_check,
             topic_links,
+            youtube_insights,
             webinar_ideas,
         )
         prompts = {
@@ -155,6 +157,7 @@ class DailyFlowTests(unittest.TestCase):
             "feature_gaps": feature_gaps(30),
             "trend_check": trend_check(7, 30),
             "topic_links": topic_links(30),
+            "youtube_insights": youtube_insights(30),
             "improve_now": improve_now(30),
             "new_ideas": new_ideas(30),
             "new_feature_analysis": new_feature_analysis(30),
@@ -162,7 +165,7 @@ class DailyFlowTests(unittest.TestCase):
             "webinar_ideas": webinar_ideas(30),
             "roadmap": roadmap(30),
         }
-        self.assertEqual(len(prompts), 13)
+        self.assertEqual(len(prompts), 14)
         self.assertTrue(all("chat" in text.lower() for name, text in prompts.items() if name != "connector_health"))
         self.assertIn("ask_product_insights", prompts["ask_product_question"])
         self.assertIn("get_connector_status", prompts["connector_health"])
@@ -179,6 +182,8 @@ class DailyFlowTests(unittest.TestCase):
         self.assertGreaterEqual(get_retail_upcoming_features()["count"], 10)
         self.assertIn("Nubra Android App", get_nubra_app_context())
         self.assertIn("cross_topic_insights", prompts["topic_links"])
+        self.assertIn("YouTube", prompts["youtube_insights"])
+        self.assertIn("comments", prompts["youtube_insights"])
         analysis_prompts = [text for name, text in prompts.items() if name not in {"connector_health"}]
         self.assertTrue(all("Start directly with the strongest insights" in text for text in analysis_prompts))
         self.assertTrue(all("do not return a plan" in text for text in analysis_prompts))

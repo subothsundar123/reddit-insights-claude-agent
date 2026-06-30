@@ -19,7 +19,7 @@ from itertools import combinations
 from typing import Any
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-CONNECTOR_VERSION = "2.1.0"
+CONNECTOR_VERSION = "2.2.0"
 CACHE_SCHEMA_VERSION = 1
 DEFAULT_SYNC_MAX_AGE_HOURS = 6
 
@@ -519,6 +519,7 @@ TOPICS = {
     "Pricing, brokerage & taxes": ["brokerage", "charges", "pricing", "subscription", "transaction cost", "stt", "gst", "stamp duty", "tax calculator"],
     "Instrument & reference data": ["instrument master", "symbol mapping", "instrument token", "contract master", "lot size", "strike price", "expiry data", "exchange segment"],
     "Platform usability & support": ["user interface", "mobile app", "dashboard", "feature discovery", "chatbot", "support ticket", "customer support", "navigation"],
+    "YouTube retail and API signals": ["youtube", "video", "comment", "creator", "channel", "views per day", "comments per day"],
 }
 
 PRODUCT_DISCOVERY_TERMS = {
@@ -545,6 +546,7 @@ COMPETITORS = {
     "Streak": ["streak"],
     "AlgoTest": ["algotest", "algo test"],
     "Sensibull": ["sensibull"],
+    "Nubra": ["nubra", "zanskar"],
 }
 
 PRODUCT_PLAYBOOK = {
@@ -918,6 +920,7 @@ def analyze(days: int | None = 30) -> dict[str, Any]:
     research_methods = {
         "web_search_review", "public_reddit_rss_review", "github_search_api",
         "hacker_news_algolia_api", "broker_docs_page_fetch", "public_signal_collector",
+        "youtube_data_api",
     }
     research_count = sum(v for k, v in source_counts.items() if k in research_methods)
     direct_count = len(posts) - research_count
@@ -1451,7 +1454,7 @@ def daily_insights(days: int = 30, use_cache: bool = True) -> dict[str, Any]:
         "awareness_gaps": available_requests,
         "available_commands": [
             "/update-connector", "/ask-insights", "/status", "/daily-insights", "/new-feature-analysis",
-            "/retail-feature-research", "/channel-insights", "/github-insights",
+            "/retail-feature-research", "/channel-insights", "/github-insights", "/youtube-insights",
             "/trend-check", "/content-plan", "/next-actions", "/feature-requests",
             "/webinar-ideas", "/roadmap", "/lead-magnets", "/competitors",
             "/existing-capabilities",
