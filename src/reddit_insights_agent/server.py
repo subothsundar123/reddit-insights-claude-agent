@@ -217,11 +217,35 @@ def connector_health() -> str:
     )
 
 
+def _channel_focus_rules(channels: str, focus: str) -> str:
+    channel_text = (channels or "all").strip().lower()
+    focus_text = (focus or "both").strip().lower()
+    return (
+        f"Channel selection: {channel_text}. Focus selection: {focus_text}. "
+        "Supported channels are all, reddit, youtube, github, hacker_news, broker_docs, manual_research and internal_catalog. "
+        "The user may also pass comma-separated combinations such as reddit,youtube or youtube,github. "
+        "If channels is all, use every available source in the synchronized dump plus the Nubra catalog. "
+        "If a specific channel is selected, use only evidence from that channel plus the Nubra catalog for coverage checks. "
+        "Map channel filters this way: reddit means Reddit posts/comments and Reddit research signals; youtube means YouTube Data API "
+        "video/comment signals; github means GitHub public issues and repositories; hacker_news means Hacker News public search signals; "
+        "broker_docs means public broker/API documentation pages; manual_research means manual web research and user-provided research notes; "
+        "internal_catalog means Nubra feature catalog and app context only. "
+        "Supported focus values are both, retail, api, new_features, content, competitors, pain_points, roadmap, webinars and lead_magnets. "
+        "If focus is retail, exclude API/developer-only conclusions. If focus is api, exclude retail-only conclusions. "
+        "If focus is new_features, emphasize upcoming Nubra feature demand and competitor comparison. If focus is content, webinars or "
+        "lead_magnets, turn repeated questions and pain points into practical content ideas. If focus is competitors, emphasize competitor "
+        "mentions and positioning without treating mention count as market share. If focus is pain_points, prioritize repeated complaints, "
+        "confusion and workflow blockers. If focus is roadmap, translate signals into Now/Next/Later product actions. "
+        "When a selected channel has little or no evidence, say so briefly and use the closest available selected evidence rather than inventing."
+    )
+
+
 @mcp.prompt()
-def daily_product_insights(days: int = 30) -> str:
-    """Reusable Claude Desktop prompt for the full daily product-insights workflow."""
+def daily_product_insights(days: int = 30, channels: str = "all", focus: str = "both") -> str:
+    """Reusable Claude Desktop prompt for daily product insights with channel and focus filters."""
     return (
         f"Call run_daily_insights for the last {days} days and prepare the complete product review. "
+        + _channel_focus_rules(channels, focus) + " "
         "Use this exact structure: 1. Executive Summary; 2. Most Discussed Topics and Product Response; "
         "3. Most Requested API Capabilities; 4. Retail and API/Algo Discussion Split; 5. Webinar Opportunities; "
         "6. Product Roadmap; 7. Existing Capabilities Users Are Missing; 8. What Nubra Can Improve Now; "

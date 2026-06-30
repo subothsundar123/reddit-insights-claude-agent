@@ -39,7 +39,7 @@ Then use the project commands:
 | `/update-connector` | Pull and apply the latest dated connector release automatically |
 | `/ask-insights <question>` | Ask any product question using all available intelligence |
 | `/status` | Check connector version, data health, record counts, catalogue and cache |
-| `/daily-insights` | Complete product insight report from the latest dumps |
+| `/daily-insights` | Complete product insight report from the latest dumps; supports days, channels and focus filters |
 | `/retail-feature-research` | Detailed retail analysis of upcoming Nubra features vs Reddit demand and competitors |
 | `/channel-insights` | Source-wise view across Reddit, GitHub, Hacker News, broker docs and future channels |
 | `/github-insights` | Developer/API demand from public GitHub issues and repos |
@@ -72,6 +72,18 @@ from `updates/latest.md`, refreshes data, reinstalls the local package, runs the
 tests and reports whether Claude Desktop needs a restart.
 
 The data source is public, so no GitHub account, token or SSH key is required. If Git is not installed, the sync engine falls back to GitHub ZIP download.
+
+Daily insights can be filtered when needed:
+
+```text
+/daily-insights days=30 channels=all focus=both
+/daily-insights days=30 channels=youtube focus=retail
+/daily-insights days=14 channels=reddit,youtube focus=content
+/daily-insights days=30 channels=all focus=new_features
+```
+
+Supported channels are `all`, `reddit`, `youtube`, `github`, `hacker_news`, `broker_docs`, `manual_research` and `internal_catalog`.
+Supported focus values are `both`, `retail`, `api`, `new_features`, `content`, `competitors`, `pain_points`, `roadmap`, `webinars` and `lead_magnets`.
 
 If the shell says `reddit-insights: command not found`, add `~/.local/bin` to `PATH`, then reopen the terminal:
 

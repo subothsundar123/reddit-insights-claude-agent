@@ -21,7 +21,7 @@ class DailyFlowTests(unittest.TestCase):
         from reddit_insights_agent.core import daily_insights
         first = daily_insights(30)
         second = daily_insights(30)
-        self.assertEqual(first["sync"]["new_dumps"], ["2026-06-22", "2026-06-23", "2026-06-24", "2026-06-28", "2026-06-29"])
+        self.assertEqual(first["sync"]["new_dumps"], ["2026-06-22", "2026-06-23", "2026-06-24", "2026-06-28", "2026-06-29", "2026-06-30"])
         self.assertEqual(second["sync"]["new_dumps"], [])
         self.assertEqual(first["sync"]["catalog_version"], "1.0.0")
         self.assertGreaterEqual(first["analysis"]["sample"]["posts"], 662)
@@ -73,7 +73,7 @@ class DailyFlowTests(unittest.TestCase):
         os.environ["INSIGHTS_DATA_REPO_PATH"] = str(self.temp / "does-not-exist")
         desktop = daily_insights(30)
         self.assertEqual(desktop["sync"]["mode"], "local_files_only")
-        self.assertEqual(desktop["sync"]["available_through"], "2026-06-29")
+        self.assertEqual(desktop["sync"]["available_through"], "2026-06-30")
         self.assertGreaterEqual(desktop["analysis"]["sample"]["posts"], 662)
 
     def test_missing_catalog_self_heals_in_local_only_mode(self):
@@ -116,7 +116,7 @@ class DailyFlowTests(unittest.TestCase):
         from reddit_insights_agent.core import connector_status, daily_insights
         daily_insights(30)
         result = connector_status()
-        self.assertEqual(result["version"], "2.2.0")
+        self.assertEqual(result["version"], "2.3.0")
         self.assertEqual(result["status"], "ready")
         self.assertGreater(result["counts"]["records"], 0)
         self.assertGreater(result["counts"]["features"], 0)
@@ -124,10 +124,13 @@ class DailyFlowTests(unittest.TestCase):
 
     def test_daily_prompt_returns_chat_report_only(self):
         from reddit_insights_agent.server import daily_product_insights
-        prompt = daily_product_insights(30)
+        prompt = daily_product_insights(30, "youtube", "retail")
         self.assertIn("existing capabilities users are missing", prompt.lower())
         self.assertIn("what nubra can improve now", prompt.lower())
         self.assertIn("only in chat", prompt)
+        self.assertIn("Channel selection: youtube", prompt)
+        self.assertIn("Focus selection: retail", prompt)
+        self.assertIn("If focus is retail", prompt)
         self.assertNotIn("create_insights_pdf", prompt)
 
     def test_simple_analysis_prompts_are_available(self):

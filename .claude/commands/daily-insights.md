@@ -1,8 +1,42 @@
 Run the complete daily product-insights flow with one user command.
 
+Optional filters the user can include in the command text:
+
+```text
+/daily-insights days=30 channels=all focus=both
+/daily-insights days=30 channels=youtube focus=retail
+/daily-insights days=14 channels=reddit,youtube focus=content
+/daily-insights days=30 channels=all focus=new_features
+```
+
+Supported channels:
+
+```text
+all, reddit, youtube, github, hacker_news, broker_docs, manual_research, internal_catalog
+```
+
+Supported focus values:
+
+```text
+both, retail, api, new_features, content, competitors, pain_points, roadmap, webinars, lead_magnets
+```
+
 First refresh/read the local data:
 - Preferred: call `run_daily_insights` with 30 days unless the user supplies another window.
 - If the MCP tool is unavailable in Claude Code, run `bash scripts/refresh-data.sh`, then run `.venv/bin/python -m reddit_insights_agent.cli daily-insights --days 30` and use the JSON as the analysis base.
+
+Apply channel and focus filters in the final answer:
+- If channels is `all`, use every available source.
+- If channels includes `youtube`, use YouTube video/comment signals and comment-derived pain points.
+- If channels includes `reddit`, use Reddit posts/comments and Reddit research signals.
+- If channels includes `github`, use public GitHub developer/API signals.
+- If focus is `retail`, exclude API/developer-only conclusions.
+- If focus is `api`, exclude retail-only conclusions.
+- If focus is `new_features`, compare upcoming Nubra features with community demand and competitor evidence.
+- If focus is `content`, `webinars` or `lead_magnets`, turn repeated questions and pain points into practical content ideas.
+- If focus is `competitors`, emphasize competitor mentions and positioning without treating mention count as market share.
+- If focus is `pain_points`, prioritize repeated complaints, confusion and workflow blockers.
+- If focus is `roadmap`, translate signals into Now/Next/Later product actions.
 
 Write the answer like a clean product insight note, not a data dump.
 
