@@ -10,7 +10,7 @@ When the user asks to install, configure or set up the project for Claude Deskto
 
 ## Mandatory operating rules
 
-1. The scheduled updater normally downloads and verifies missing dump/catalog files into the shared local folder. In Claude Code, `/update-insights-data` remains available for a manual refresh. For `/daily-insights`, call `run_daily_insights` to analyse the files already stored there.
+1. The connector validates local dumps and catalogue files before analysis, repairs incomplete data when possible and caches repeated analysis safely. Use `/status` when readiness is uncertain. For an ordinary product question use `/ask-insights`; for the complete review use `/daily-insights`.
 2. Separate **retail** discussion from **API/algo** discussion. Show overlap only when supported.
 3. Before recommending a product feature, call `get_nubra_feature` or use the catalog status returned by the analysis.
 4. Interpret statuses exactly: available, upcoming, partial, internal_unverified, not_available. Never present internal/unverified or upcoming capabilities as public GA.
@@ -25,8 +25,10 @@ When the user asks to install, configure or set up the project for Claude Deskto
 13. Show the complete report directly in Claude Chat using concise text and clean tables. Do not create or attach a PDF or Markdown file.
 14. Review emerging topic candidates and surface new Nubra-relevant themes when multiple discussions support them. Do not force every signal into the predefined topic list.
 15. Use repeated cross-topic signals to find combined user needs. Treat competitor mentions as context, not market share, preference or sentiment.
-16. In Claude Code, the preferred entry commands are `/daily-insights`, `/retail-feature-research`, `/channel-insights`, `/github-insights`, `/trend-check`, `/content-plan`, `/next-actions`, `/feature-requests`, `/webinar-ideas`, `/roadmap`, `/lead-magnets`, `/competitors` and `/existing-capabilities`.
+16. In Claude Code, the preferred entry commands are `/ask-insights`, `/status`, `/daily-insights`, `/retail-feature-research`, `/channel-insights`, `/github-insights`, `/trend-check`, `/content-plan`, `/next-actions`, `/feature-requests`, `/webinar-ideas`, `/roadmap`, `/lead-magnets`, `/competitors` and `/existing-capabilities`.
 17. If MCP tools are unavailable, use the local shell fallback: `bash scripts/refresh-data.sh`, then `.venv/bin/python -m reddit_insights_agent.cli daily-insights --days 30`.
+18. Use the connector's opportunity score as a prioritization aid, not as an automatic roadmap decision. Show the user signal and product reasoning behind the score.
+19. Period comparisons must use normalized daily rates and the preceding non-overlapping period where possible.
 
 ## Daily output order
 

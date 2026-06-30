@@ -18,11 +18,15 @@ Required output:
 9. Competitor signals and positioning opportunities.
 10. Cross-topic insights where repeated user problems connect.
 11. Emerging topics and new ideas when the dump supports them.
+12. Opportunity priorities using the connector's opportunity scores.
+13. What changed versus the preceding period.
 
 Rules:
 - Keep one unified narrative. Do not separate "dump data" and "external thinking".
 - Use current web research only if it materially improves the recommendation.
 - Do not create or attach PDF/Markdown files. Show the answer directly in chat.
 - Avoid generic statements. Every major point needs a user problem, product implication and practical action.
+- Use representative evidence links for major conclusions.
+- Separate available, partial, upcoming, missing and needs-verification capabilities.
 - Do not create a separate strategy-builder section; include those signals inside feature, roadmap or workflow recommendations.
-- End with only useful follow-up commands.
+- End with only useful follow-up questions or commands.

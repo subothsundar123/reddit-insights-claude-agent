@@ -32,6 +32,8 @@ class DailyFlowTests(unittest.TestCase):
         self.assertIn("broker_docs_page_fetch", first["analysis"]["sample"]["source_methods"])
         self.assertIn("/feature-requests", first["available_commands"])
         self.assertIn("/new-feature-analysis", first["available_commands"])
+        self.assertIn("/ask-insights", first["available_commands"])
+        self.assertIn("/status", first["available_commands"])
         self.assertIn("/retail-feature-research", first["available_commands"])
         self.assertIn("/channel-insights", first["available_commands"])
         self.assertNotIn("report_markdown", first)
@@ -44,6 +46,12 @@ class DailyFlowTests(unittest.TestCase):
         self.assertIn("competitor_signals", first["analysis"])
         self.assertIn("cross_topic_insights", first["analysis"])
         self.assertTrue(first["analysis"]["cross_topic_insights"])
+        self.assertFalse(first["cache_hit"])
+        self.assertTrue(second["cache_hit"])
+        self.assertTrue(first["opportunity_scores"])
+        self.assertTrue(all("opportunity_score" in item for item in first["opportunity_scores"]))
+        self.assertTrue(first["feature_gap_matrix"])
+        self.assertTrue(first["trend_changes"]["changes"])
         from reddit_insights_agent.core import TOPICS
         self.assertIn("Fundamental data & research", TOPICS)
         self.assertIn("Scanners, indicators & alerts", TOPICS)
@@ -66,6 +74,52 @@ class DailyFlowTests(unittest.TestCase):
         self.assertEqual(desktop["sync"]["available_through"], "2026-06-29")
         self.assertGreaterEqual(desktop["analysis"]["sample"]["posts"], 662)
 
+    def test_missing_catalog_self_heals_in_local_only_mode(self):
+        from reddit_insights_agent.core import connector_status, daily_insights, sync
+        daily_insights(30)
+        (self.temp / "catalog" / "current.json").unlink()
+        os.environ["INSIGHTS_DESKTOP_LOCAL_ONLY"] = "1"
+        result = sync()
+        self.assertEqual(result["health"], "healthy")
+        self.assertTrue((self.temp / "catalog" / "current.json").exists())
+        self.assertEqual(connector_status()["status"], "ready")
+
+    def test_corrupted_dump_self_heals(self):
+        from reddit_insights_agent.core import daily_insights, sync
+        daily_insights(30)
+        dump = self.temp / "raw" / "daily-dumps" / "2026-06-29" / "signals.jsonl.gz"
+        original = dump.read_bytes()
+        dump.write_bytes(b"corrupted")
+        result = sync()
+        self.assertEqual(result["health"], "healthy")
+        self.assertEqual(dump.read_bytes(), original)
+
+    def test_universal_query_returns_decision_inputs(self):
+        from reddit_insights_agent.core import ask_insights
+        result = ask_insights("What option chain features should Nubra prioritize?", 30)
+        inputs = result["answer_inputs"]
+        self.assertTrue(inputs["relevant_topics"])
+        self.assertTrue(inputs["product_opportunities"])
+        self.assertTrue(inputs["feature_gap_matrix"])
+        self.assertTrue(inputs["evidence"])
+        self.assertTrue(result["suggested_followups"])
+        upcoming = ask_insights("What upcoming retail features should Nubra launch?", 30)
+        self.assertGreaterEqual(len(upcoming["answer_inputs"]["retail_upcoming_features"]), 10)
+        self.assertTrue(all(
+            row["classification"] == "Upcoming"
+            for row in upcoming["answer_inputs"]["feature_gap_matrix"]
+        ))
+
+    def test_connector_status_has_counts_and_tools(self):
+        from reddit_insights_agent.core import connector_status, daily_insights
+        daily_insights(30)
+        result = connector_status()
+        self.assertEqual(result["version"], "2.0.0")
+        self.assertEqual(result["status"], "ready")
+        self.assertGreater(result["counts"]["records"], 0)
+        self.assertGreater(result["counts"]["features"], 0)
+        self.assertIn("ask_product_insights", result["available_tools"])
+
     def test_daily_prompt_returns_chat_report_only(self):
         from reddit_insights_agent.server import daily_product_insights
         prompt = daily_product_insights(30)
@@ -76,7 +130,9 @@ class DailyFlowTests(unittest.TestCase):
 
     def test_simple_analysis_prompts_are_available(self):
         from reddit_insights_agent.server import (
+            ask_product_question,
             competitors,
+            connector_health,
             feature_gaps,
             feature_requests,
             get_nubra_app_context,
@@ -91,6 +147,8 @@ class DailyFlowTests(unittest.TestCase):
             webinar_ideas,
         )
         prompts = {
+            "ask_product_question": ask_product_question("What should Nubra improve?", 30),
+            "connector_health": connector_health(),
             "competitors": competitors(30),
             "feature_requests": feature_requests(30),
             "feature_gaps": feature_gaps(30),
@@ -103,8 +161,10 @@ class DailyFlowTests(unittest.TestCase):
             "webinar_ideas": webinar_ideas(30),
             "roadmap": roadmap(30),
         }
-        self.assertEqual(len(prompts), 11)
-        self.assertTrue(all("chat" in text.lower() for text in prompts.values()))
+        self.assertEqual(len(prompts), 13)
+        self.assertTrue(all("chat" in text.lower() for name, text in prompts.items() if name != "connector_health"))
+        self.assertIn("ask_product_insights", prompts["ask_product_question"])
+        self.assertIn("get_connector_status", prompts["connector_health"])
         self.assertIn("Product, SDK, MCP and Support", prompts["improve_now"])
         self.assertIn("Already available", prompts["feature_gaps"])
         self.assertIn("Underlying user need", prompts["feature_requests"])
@@ -118,7 +178,8 @@ class DailyFlowTests(unittest.TestCase):
         self.assertGreaterEqual(get_retail_upcoming_features()["count"], 10)
         self.assertIn("Nubra Android App", get_nubra_app_context())
         self.assertIn("cross_topic_insights", prompts["topic_links"])
-        self.assertTrue(all("Start directly with the strongest insights" in text for text in prompts.values()))
-        self.assertTrue(all("do not return a plan" in text for text in prompts.values()))
+        analysis_prompts = [text for name, text in prompts.items() if name not in {"connector_health"}]
+        self.assertTrue(all("Start directly with the strongest insights" in text for text in analysis_prompts))
+        self.assertTrue(all("do not return a plan" in text for text in analysis_prompts))
 
 if __name__ == "__main__": unittest.main()

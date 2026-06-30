@@ -3,19 +3,27 @@ from __future__ import annotations
 import pathlib
 
 from mcp.server.fastmcp import FastMCP
-from .core import compare_periods, daily_insights, feature_lookup, retail_upcoming_features, search
+from .core import (
+    ask_insights,
+    compare_periods,
+    connector_status,
+    daily_insights,
+    feature_lookup,
+    retail_upcoming_features,
+    search,
+    sync,
+)
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 
 mcp = FastMCP(
     "reddit-product-insights",
     instructions=(
-        "This connector provides evidence-grounded Reddit product insights. "
-        "When the user asks for daily insights, today's insights, hot topics, "
-        "API demand, webinars, roadmap, or similar product analysis, call "
-        "run_daily_insights first. In Claude Desktop, that tool reads the verified dumps "
-        "already saved in the shared local folder; GitHub updates are performed separately "
-        "by Claude Code through /update-insights-data. "
+        "This connector provides evidence-grounded product insights. "
+        "For a natural-language question about users, products, features, competitors, "
+        "content, roadmap or Nubra, call ask_product_insights first. For a complete daily "
+        "review call run_daily_insights. Both paths validate local data, refresh stale data "
+        "when possible and use cached analysis for speed. "
         "Preserve the retail versus API/algo split and all Nubra status qualifications. "
         "Use the synchronized dump as the primary community-signal foundation, then enrich "
         "the analysis with current web research and sound product reasoning when those "
@@ -75,6 +83,16 @@ def run_daily_insights(days: int = 30) -> dict:
         "cross_topic_insights": analysis.get("cross_topic_insights", [])[:12],
         "competitor_signals": analysis.get("competitor_signals", [])[:10],
         "top_evidence": analysis["top_evidence"][:10],
+        "feature_gap_matrix": result.get("feature_gap_matrix", [])[:12],
+        "opportunity_scores": result.get("opportunity_scores", [])[:12],
+        "trend_changes": result.get("trend_changes", {}).get("changes", [])[:12],
+        "suggested_followups": [
+            "Show evidence for the strongest signal.",
+            "Compare the strongest opportunity with relevant competitors.",
+            "Separate genuine product gaps from awareness and onboarding gaps.",
+            "Turn the strongest user problem into a webinar and launch message.",
+        ],
+        "cache_hit": result.get("cache_hit", False),
         "analysis_policy": policy,
         "report_contract": {
             "tone": "Concise, clear and product-led insights",
@@ -103,6 +121,25 @@ def run_daily_insights(days: int = 30) -> dict:
             ],
         },
     }
+
+
+@mcp.tool()
+def ask_product_insights(question: str, days: int = 30) -> dict:
+    """Answer any product question using synchronized evidence, Nubra coverage, trends, competitors and scored opportunities."""
+    return ask_insights(question, days)
+
+
+@mcp.tool()
+def get_connector_status(refresh: bool = False) -> dict:
+    """Check connector version, data health, latest dump, record counts, catalog coverage and available tools."""
+    return connector_status(refresh)
+
+
+@mcp.tool()
+def refresh_insights_data() -> dict:
+    """Force an immediate verified refresh and repair of the local data snapshot."""
+    return sync(force_remote=True)
+
 
 @mcp.tool()
 def search_evidence(query: str, limit: int = 20) -> list[dict]:
@@ -155,6 +192,32 @@ def _insight_rules() -> str:
 
 
 @mcp.prompt()
+def ask_product_question(question: str, days: int = 30) -> str:
+    """Ask one product question using all relevant connector intelligence."""
+    return (
+        f'Call ask_product_insights with this question: "{question}" and days={days}. '
+        "Answer the question directly before adding supporting detail. Use the returned evidence, "
+        "feature-gap classification, opportunity score, trend changes, competitor context and Nubra "
+        "coverage only where they materially improve the answer. Separate genuine build gaps from "
+        "visibility, onboarding, documentation and support gaps. End with the most useful suggested "
+        "follow-ups returned by the tool. "
+        + _insight_rules()
+    )
+
+
+@mcp.prompt()
+def connector_health() -> str:
+    """Check whether the connector and its local intelligence store are ready."""
+    return (
+        "Call get_connector_status with refresh=false. Show a compact readiness table with connector "
+        "version, status, latest dump, record count, feature count, last check and cache entries. "
+        "If the status is not ready or issues are present, call refresh_insights_data once, then call "
+        "get_connector_status again. State the exact remaining problem and next action. Do not produce "
+        "a product-insights report."
+    )
+
+
+@mcp.prompt()
 def daily_product_insights(days: int = 30) -> str:
     """Reusable Claude Desktop prompt for the full daily product-insights workflow."""
     return (
@@ -165,9 +228,13 @@ def daily_product_insights(days: int = 30) -> str:
         "9. Emerging Topics and New Ideas; 10. Competitor Signals. "
         "For each major topic, state the user problem, affected segment, signal in the data, product implication, "
         "Nubra's current coverage and the recommended response. Keep the executive summary to the most important "
-        "decisions. Inside the topic section, add a short related-topic table when cross_topic_insights reveal a meaningful "
+        "decisions and call out meaningful changes from trend_changes. In the topic and roadmap tables, use the returned "
+        "opportunity score as a prioritization aid and explain the user signal behind it. Use feature_gap_matrix to classify "
+        "capabilities as Available, Partial, Upcoming, Missing or Needs verification. Attach representative evidence links "
+        "to major conclusions. Inside the topic section, add a short related-topic table when cross_topic_insights reveal a meaningful "
         "combined need. Use tables for topics, requests, segments, webinars, roadmap and immediate improvements. "
-        "Do not repeat the same recommendation across sections and do not add a separate strategy-builder section. "
+        "Do not repeat the same recommendation across sections and do not add a separate strategy-builder section. End with "
+        "the most useful suggested follow-up questions returned by the connector. "
         + _insight_rules()
     )
 

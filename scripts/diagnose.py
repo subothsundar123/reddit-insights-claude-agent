@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import os
 import pathlib
 import subprocess
 import sys
@@ -24,8 +25,13 @@ def main() -> None:
     parser.add_argument("--claude-config", type=pathlib.Path)
     args = parser.parse_args()
 
-    platform = SETUP.platform_name()
-    config_path = (args.claude_config or SETUP.find_claude_config(platform)).expanduser()
+    platform = "windows" if sys.platform == "win32" else SETUP.platform_name()
+    if args.claude_config:
+        config_path = args.claude_config.expanduser()
+    elif platform == "windows":
+        config_path = pathlib.Path(os.getenv("APPDATA", pathlib.Path.home() / "AppData" / "Roaming")) / "Claude" / "claude_desktop_config.json"
+    else:
+        config_path = SETUP.find_claude_config(platform).expanduser()
     data_dir = args.data_dir.expanduser()
     problems: list[str] = []
 

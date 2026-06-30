@@ -1,5 +1,9 @@
 # Reddit Product Insights Agent
 
+Version 2 adds self-healing data sync, connector health checks, cached analysis,
+evidence-backed answers, feature-gap classification, opportunity scoring,
+period-over-period change detection and one universal product-question workflow.
+
 ## Fast setup prompt for Linux
 
 If you are setting this up through Claude Code on Linux, use:
@@ -32,6 +36,8 @@ Then use the project commands:
 
 | Command | Use |
 |---|---|
+| `/ask-insights <question>` | Ask any product question using all available intelligence |
+| `/status` | Check connector version, data health, record counts, catalogue and cache |
 | `/daily-insights` | Complete product insight report from the latest dumps |
 | `/retail-feature-research` | Detailed retail analysis of upcoming Nubra features vs Reddit demand and competitors |
 | `/channel-insights` | Source-wise view across Reddit, GitHub, Hacker News, broker docs and future channels |
@@ -110,8 +116,10 @@ The full copy-ready prompt is available in `desktop/DAILY_INSIGHTS_PROMPT.md`.
 
 ### Focused connector prompts
 
-Claude Desktop also exposes nine short prompts for focused work:
+Claude Desktop also exposes reusable prompts for focused work:
 
+- `ask_product_question` - answer one natural-language product question using the full intelligence layer
+- `connector_health` - check data readiness and repair unhealthy local data
 - `feature_requests` - strongest user requests and the right product response
 - `feature_gaps` - requested capabilities compared with Nubra's current coverage
 - `trend_check` - rising, stable and declining discussion themes
@@ -123,6 +131,26 @@ Claude Desktop also exposes nine short prompts for focused work:
 - `topic_links` - combined opportunities where discussion themes repeatedly overlap
 
 These prompts use the same locally stored dumps and Nubra feature catalogue. Each prompt starts with the strongest insights, identifies the user problem, separates demand signals, checks current coverage, distinguishes product gaps from adoption gaps and recommends the smallest useful action. The engine also returns relevant unclassified discussions so new Nubra topics and ideas are not lost when they fall outside the standard categories. Outputs appear as concise text and tables directly in chat without describing the analysis process.
+
+### Intelligence layer
+
+- Local state, dump files and the feature catalogue are validated before analysis.
+- Missing or corrupted local files trigger an automatic verified repair.
+- Healthy recent snapshots are reused, while stale snapshots are refreshed when a source is available.
+- Common daily analyses are cached and invalidated whenever dumps, catalogue data or connector version changes.
+- Major conclusions include representative evidence with date, channel, engagement and source link.
+- Requested features are classified as Available, Partial, Upcoming, Missing or Needs verification.
+- Opportunities are scored using recurrence, engagement, segment reach, connected user needs, competitor context and Nubra relevance.
+- Trend output compares recent daily rates with the preceding period instead of comparing unequal raw totals.
+- Every universal answer includes practical follow-up questions for deeper evidence, competitor review, product requirements or content planning.
+
+Useful CLI checks:
+
+```bash
+insights-agent status
+insights-agent status --refresh
+insights-agent ask "What should Nubra improve in the option-chain workflow?"
+```
 
 ## Automatic shared-folder workflow
 

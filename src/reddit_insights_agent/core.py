@@ -19,6 +19,9 @@ from itertools import combinations
 from typing import Any
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
+CONNECTOR_VERSION = "2.0.0"
+CACHE_SCHEMA_VERSION = 1
+DEFAULT_SYNC_MAX_AGE_HOURS = 6
 
 
 def local_root() -> pathlib.Path:
@@ -32,7 +35,9 @@ def _load(path: pathlib.Path) -> Any:
 
 def _write(path: pathlib.Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    temporary.write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    temporary.replace(path)
 
 
 def _sha(path: pathlib.Path) -> str:
@@ -41,6 +46,101 @@ def _sha(path: pathlib.Path) -> str:
         for block in iter(lambda: f.read(1024 * 1024), b""):
             h.update(block)
     return h.hexdigest()
+
+
+def _state_age_hours(state: dict[str, Any]) -> float | None:
+    value = state.get("last_checked_at")
+    if not value:
+        return None
+    try:
+        checked = dt.datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        if checked.tzinfo is None:
+            checked = checked.replace(tzinfo=dt.timezone.utc)
+        return max(0.0, (dt.datetime.now(dt.timezone.utc) - checked).total_seconds() / 3600)
+    except (TypeError, ValueError):
+        return None
+
+
+def _dump_issues(root: pathlib.Path, collection_date: str) -> list[str]:
+    folder = root / "raw" / "daily-dumps" / collection_date
+    manifest_path = folder / "manifest.json"
+    issues = []
+    for filename in ("posts.jsonl.gz", "comments.jsonl.gz", "manifest.json"):
+        if not (folder / filename).exists():
+            issues.append(f"{collection_date}/{filename} is missing")
+    if not manifest_path.exists():
+        return issues
+    try:
+        manifest = _load(manifest_path)
+        for item in manifest.get("files", []):
+            path = root / "raw" / item["path"]
+            if not path.exists():
+                issues.append(f"{item['path']} is missing")
+            elif item.get("sha256") and _sha(path) != item["sha256"]:
+                issues.append(f"{item['path']} checksum does not match")
+    except (OSError, json.JSONDecodeError, KeyError, TypeError):
+        issues.append(f"{collection_date}/manifest.json is unreadable")
+    return list(dict.fromkeys(issues))
+
+
+def _local_data_health(root: pathlib.Path) -> dict[str, Any]:
+    issues: list[str] = []
+    state_path = root / "sync-state.json"
+    state: dict[str, Any] = {}
+    if not state_path.exists():
+        issues.append("sync-state.json is missing")
+    else:
+        try:
+            state = _load(state_path)
+        except (OSError, json.JSONDecodeError, TypeError):
+            issues.append("sync-state.json is unreadable")
+
+    dumps = sorted(set(state.get("dumps", []))) if isinstance(state.get("dumps", []), list) else []
+    if not dumps:
+        issues.append("no data dumps are registered")
+    for collection_date in dumps:
+        issues.extend(_dump_issues(root, str(collection_date)))
+
+    catalog = root / "catalog" / "current.json"
+    if not catalog.exists():
+        issues.append("feature catalog is missing")
+    else:
+        expected = state.get("catalog_sha256")
+        if expected:
+            try:
+                if _sha(catalog) != expected:
+                    issues.append("feature catalog checksum does not match")
+            except OSError:
+                issues.append("feature catalog cannot be read")
+        try:
+            payload = _load(catalog)
+            if not isinstance(payload.get("features"), list):
+                issues.append("feature catalog has an invalid structure")
+        except (OSError, json.JSONDecodeError, TypeError, AttributeError):
+            issues.append("feature catalog is unreadable")
+
+    return {
+        "healthy": not issues,
+        "issues": issues,
+        "state": state,
+        "latest_dump": max(dumps) if dumps else None,
+        "dump_count": len(dumps),
+        "state_age_hours": _state_age_hours(state),
+    }
+
+
+def _local_sync_result(root: pathlib.Path, health: dict[str, Any], mode: str, warning: str | None = None) -> dict[str, Any]:
+    state = health.get("state", {})
+    return {
+        "new_dumps": [],
+        "available_through": health.get("latest_dump"),
+        "catalog_version": state.get("catalog_version"),
+        "local_folder": str(root),
+        "warning": warning,
+        "mode": mode,
+        "last_checked_at": state.get("last_checked_at"),
+        "health": "healthy" if health.get("healthy") else "needs_repair",
+    }
 
 
 class Source:
@@ -141,66 +241,127 @@ class Source:
         return json.loads(self.bytes(rel).decode("utf-8-sig"))
 
 
-def sync() -> dict[str, Any]:
-    root = local_root(); root.mkdir(parents=True, exist_ok=True)
+def sync(force_remote: bool = False) -> dict[str, Any]:
+    """Validate local data, refresh it when needed, and repair incomplete state.
+
+    A healthy recent local snapshot is used immediately. A stale or damaged
+    snapshot is refreshed even when Desktop local-only mode is configured.
+    If the network is unavailable, a healthy local snapshot remains usable.
+    """
+    root = local_root()
+    root.mkdir(parents=True, exist_ok=True)
     state_path = root / "sync-state.json"
     local_only = os.getenv("INSIGHTS_DESKTOP_LOCAL_ONLY", "").lower() in {"1", "true", "yes"}
-    if local_only:
-        if not state_path.exists():
-            raise RuntimeError(
-                "No local insights data is available. Open the agent repository in "
-                "Claude Code and run /update-insights-data first."
-            )
-        state = _load(state_path)
+    try:
+        max_age_hours = max(0.0, float(os.getenv("INSIGHTS_SYNC_MAX_AGE_HOURS", DEFAULT_SYNC_MAX_AGE_HOURS)))
+    except ValueError:
+        max_age_hours = float(DEFAULT_SYNC_MAX_AGE_HOURS)
+
+    health = _local_data_health(root)
+    age = health.get("state_age_hours")
+    recent = age is not None and age <= max_age_hours
+    if not force_remote and health["healthy"] and recent:
         import_local(root)
+        return _local_sync_result(
+            root,
+            health,
+            "local_files_only" if local_only else "cached_local",
+        )
+
+    # Local-only remains the normal fast path, but stale or broken local data
+    # is allowed to self-repair from the configured public source.
+    if local_only and health["healthy"] and not force_remote and not os.getenv("INSIGHTS_DATA_REPO_URL") and not os.getenv("INSIGHTS_DATA_REPO_PATH"):
+        import_local(root)
+        return _local_sync_result(root, health, "local_files_only", "Remote source is not configured.")
+
+    try:
+        source = Source()
+        source.refresh()
+        try:
+            state = _load(state_path) if state_path.exists() else {"dumps": [], "catalog_version": None}
+        except (OSError, json.JSONDecodeError, TypeError):
+            state = {"dumps": [], "catalog_version": None}
+        state.setdefault("dumps", [])
+
+        # A dump is considered synchronized only while all required local
+        # files exist. Removing the state entry lets the normal download loop
+        # restore a partial or accidentally deleted dump.
+        valid_dumps = []
+        for collection_date in sorted(set(state.get("dumps", []))):
+            if not _dump_issues(root, str(collection_date)):
+                valid_dumps.append(collection_date)
+        state["dumps"] = valid_dumps
+
+        index = source.json("manifests/all_dumps.json")
+        pulled = []
+        for entry in index.get("dumps", []):
+            date = entry["collection_date"]
+            if date in state["dumps"]:
+                continue
+            manifest = source.json(entry["manifest"])
+            for item in manifest["files"]:
+                destination = root / "raw" / item["path"]
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_bytes(source.bytes(item["path"]))
+                if _sha(destination) != item["sha256"]:
+                    destination.unlink(missing_ok=True)
+                    raise RuntimeError(f"Checksum mismatch for {item['path']}")
+            local_manifest = root / "raw" / entry["manifest"]
+            local_manifest.parent.mkdir(parents=True, exist_ok=True)
+            local_manifest.write_bytes(source.bytes(entry["manifest"]))
+            state["dumps"].append(date)
+            pulled.append(date)
+
+        catalog_manifest = source.json("product-catalog/manifest.json")
+        destination = root / "catalog" / "current.json"
+        catalog_valid = (
+            destination.exists()
+            and state.get("catalog_sha256") == catalog_manifest.get("sha256")
+            and _sha(destination) == catalog_manifest.get("sha256")
+        )
+        if (
+            catalog_manifest["current_version"] != state.get("catalog_version")
+            or not catalog_valid
+        ):
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(source.bytes(catalog_manifest["path"]))
+            if _sha(destination) != catalog_manifest["sha256"]:
+                destination.unlink(missing_ok=True)
+                raise RuntimeError("Feature catalog checksum mismatch")
+            state["catalog_version"] = catalog_manifest["current_version"]
+            state["catalog_sha256"] = catalog_manifest["sha256"]
+
+        state["dumps"] = sorted(set(state["dumps"]))
+        state["last_checked_at"] = dt.datetime.now(dt.timezone.utc).isoformat()
+        _write(state_path, state)
+        import_local(root)
+        repaired_health = _local_data_health(root)
+        if not repaired_health["healthy"]:
+            raise RuntimeError("Local data validation failed after refresh: " + "; ".join(repaired_health["issues"]))
         return {
-            "new_dumps": [],
-            "available_through": max(state.get("dumps", [])) if state.get("dumps") else None,
+            "new_dumps": pulled,
+            "available_through": max(state["dumps"]) if state["dumps"] else None,
             "catalog_version": state.get("catalog_version"),
             "local_folder": str(root),
-            "warning": None,
-            "mode": "local_files_only",
+            "warning": source.warning,
+            "mode": "github_sync",
             "last_checked_at": state.get("last_checked_at"),
+            "health": "healthy",
         }
-    source = Source(); source.refresh()
-    state = _load(state_path) if state_path.exists() else {"dumps": [], "catalog_version": None}
-    index = source.json("manifests/all_dumps.json")
-    pulled = []
-    for entry in index.get("dumps", []):
-        date = entry["collection_date"]
-        if date in state["dumps"]:
-            continue
-        manifest = source.json(entry["manifest"])
-        for item in manifest["files"]:
-            destination = root / "raw" / item["path"]
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            destination.write_bytes(source.bytes(item["path"]))
-            if _sha(destination) != item["sha256"]:
-                destination.unlink(missing_ok=True)
-                raise RuntimeError(f"Checksum mismatch for {item['path']}")
-        local_manifest = root / "raw" / entry["manifest"]
-        local_manifest.parent.mkdir(parents=True, exist_ok=True)
-        local_manifest.write_bytes(source.bytes(entry["manifest"]))
-        state["dumps"].append(date); pulled.append(date)
-
-    catalog_manifest = source.json("product-catalog/manifest.json")
-    if (catalog_manifest["current_version"] != state.get("catalog_version")
-            or catalog_manifest["sha256"] != state.get("catalog_sha256")):
-        destination = root / "catalog" / "current.json"
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_bytes(source.bytes(catalog_manifest["path"]))
-        if _sha(destination) != catalog_manifest["sha256"]:
-            raise RuntimeError("Feature catalog checksum mismatch")
-        state["catalog_version"] = catalog_manifest["current_version"]
-        state["catalog_sha256"] = catalog_manifest["sha256"]
-    state["dumps"] = sorted(set(state["dumps"]))
-    state["last_checked_at"] = dt.datetime.now(dt.timezone.utc).isoformat()
-    _write(state_path, state)
-    import_local(root)
-    return {"new_dumps": pulled, "available_through": max(state["dumps"]) if state["dumps"] else None,
-            "catalog_version": state.get("catalog_version"), "local_folder": str(root),
-            "warning": source.warning, "mode": "github_sync",
-            "last_checked_at": state.get("last_checked_at")}
+    except Exception as exc:
+        fallback = _local_data_health(root)
+        if fallback["healthy"]:
+            import_local(root)
+            return _local_sync_result(
+                root,
+                fallback,
+                "degraded_local",
+                f"Remote refresh failed; using the last verified local data. {type(exc).__name__}: {exc}",
+            )
+        raise RuntimeError(
+            "Insights data is incomplete and automatic repair failed. "
+            f"Problems: {', '.join(fallback['issues'])}. Refresh error: {exc}"
+        ) from exc
 
 
 def connect(root: pathlib.Path | None = None) -> sqlite3.Connection:
@@ -622,6 +783,23 @@ def retail_upcoming_features() -> dict[str, Any]:
     }
 
 
+def _evidence_item(post: dict[str, Any], excerpt_length: int = 220) -> dict[str, Any]:
+    body = re.sub(r"\s+", " ", post.get("body") or "").strip()
+    return {
+        "id": post.get("id"),
+        "date": post.get("collection_date"),
+        "title": post.get("title"),
+        "excerpt": body[:excerpt_length],
+        "channel": post.get("subreddit"),
+        "segment": post.get("segment"),
+        "score": post.get("score", 0),
+        "comments": post.get("num_comments", 0),
+        "url": post.get("permalink"),
+        "source_method": post.get("source_method"),
+        "evidence_quality": post.get("evidence_quality"),
+    }
+
+
 def analyze(days: int | None = 30) -> dict[str, Any]:
     db = connect(); clause, params = _range_clause(days)
     posts = [dict(r) for r in db.execute("SELECT * FROM posts" + clause, params)]
@@ -663,7 +841,7 @@ def analyze(days: int | None = 30) -> dict[str, Any]:
             pair["engagement"] += weight
             pair[p["segment"]] += 1
             if len(pair["examples"]) < 3:
-                pair["examples"].append({"title": p["title"], "url": p["permalink"]})
+                pair["examples"].append(_evidence_item(p))
 
         for competitor, aliases in COMPETITORS.items():
             if not any(_contains_alias(text, alias) for alias in aliases):
@@ -682,7 +860,7 @@ def analyze(days: int | None = 30) -> dict[str, Any]:
             item[p["segment"]] += 1
             item["related_topics"].update(known_topics)
             if len(item["examples"]) < 3:
-                item["examples"].append({"title": p["title"], "url": p["permalink"]})
+                item["examples"].append(_evidence_item(p))
         if not matched_topics:
             if any(term in text for term in PRODUCT_DISCOVERY_TERMS):
                 emerging_candidates.append({
@@ -699,7 +877,7 @@ def analyze(days: int | None = 30) -> dict[str, Any]:
         for name in matched_topics:
             item = topic_rows.setdefault(name, {"topic": name, "mentions": 0, "engagement": 0.0, "retail": 0, "api_algo": 0, "examples": []})
             item["mentions"] += 1; item["engagement"] += weight; item[p["segment"]] += 1
-            if len(item["examples"]) < 3: item["examples"].append({"title": p["title"], "subreddit": p["subreddit"], "url": p["permalink"]})
+            if len(item["examples"]) < 3: item["examples"].append(_evidence_item(p))
         # Product-demand ranking is intentionally restricted to API/algo-context
         # posts. Retail investment language such as "funds" or "orders" otherwise
         # creates false matches against API capability names.
@@ -709,7 +887,7 @@ def analyze(days: int | None = 30) -> dict[str, Any]:
                 if any(str(a).lower() in text for a in aliases if len(str(a)) >= 4):
                     item = feature_rows.setdefault(f["id"], {"feature": f["name"], "status": f["status"], "mentions": 0, "engagement": 0.0, "examples": []})
                     item["mentions"] += 1; item["engagement"] += weight
-                    if len(item["examples"]) < 3: item["examples"].append({"title": p["title"], "url": p["permalink"]})
+                    if len(item["examples"]) < 3: item["examples"].append(_evidence_item(p))
         evidence.append((weight, p))
     topics = sorted(topic_rows.values(), key=lambda x: (x["mentions"], x["engagement"]), reverse=True)
     requested = sorted(feature_rows.values(), key=lambda x: (x["mentions"], x["engagement"]), reverse=True)
@@ -735,7 +913,7 @@ def analyze(days: int | None = 30) -> dict[str, Any]:
     )[:12]
     for row in topics + requested + cross_topic_insights + competitor_signals:
         row["engagement"] = round(row["engagement"], 2)
-    top_evidence = [{"title": p["title"], "segment": p["segment"], "score": p["score"], "comments": p["num_comments"], "url": p["permalink"]} for _, p in sorted(evidence, key=lambda item: item[0], reverse=True)[:15]]
+    top_evidence = [_evidence_item(p) for _, p in sorted(evidence, key=lambda item: item[0], reverse=True)[:15]]
     source_counts = Counter(p.get("source_method") or "unknown" for p in posts)
     research_methods = {
         "web_search_review", "public_reddit_rss_review", "github_search_api",
@@ -814,6 +992,323 @@ def build_roadmap(opportunities: list[dict[str, Any]], feature_requests: list[di
         if item not in roadmap[bucket]:
             roadmap[bucket].append(item)
     return {bucket: items[:5] for bucket, items in roadmap.items()}
+
+
+def build_feature_gap_matrix(data: dict[str, Any]) -> list[dict[str, Any]]:
+    classification = {
+        "available": ("Available", "Awareness or adoption gap"),
+        "partial": ("Partial", "Workflow or coverage gap"),
+        "upcoming": ("Upcoming", "Launch readiness and positioning"),
+        "internal_unverified": ("Needs verification", "Ownership and public-availability check"),
+        "not_available": ("Missing", "Product discovery candidate"),
+    }
+    rows = []
+    for request in data.get("feature_requests", []):
+        status = request.get("status") or "not_available"
+        label, gap_type = classification.get(status, ("Needs verification", "Coverage verification"))
+        rows.append({
+            "feature": request["feature"],
+            "classification": label,
+            "catalog_status": status,
+            "gap_type": gap_type,
+            "mentions": request["mentions"],
+            "engagement": request["engagement"],
+            "recommended_action": _feature_action(status),
+            "evidence": request.get("examples", [])[:3],
+        })
+    return rows
+
+
+def score_product_opportunities(data: dict[str, Any], opportunities: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    if not opportunities:
+        return []
+    max_mentions = max(item["mentions"] for item in opportunities) or 1
+    max_engagement = max(float(item["engagement"]) for item in opportunities) or 1.0
+    competitor_support = Counter()
+    for competitor in data.get("competitor_signals", []):
+        for related in competitor.get("related_topics", []):
+            competitor_support[related["topic"]] += related["mentions"]
+    cross_topic_support = Counter()
+    for pair in data.get("cross_topic_insights", []):
+        cross_topic_support[pair["topic_a"]] += pair["mentions"]
+        cross_topic_support[pair["topic_b"]] += pair["mentions"]
+
+    scored = []
+    for opportunity in opportunities:
+        topic = opportunity["topic"]
+        components = {
+            "demand": round(35 * opportunity["mentions"] / max_mentions, 1),
+            "engagement": round(20 * float(opportunity["engagement"]) / max_engagement, 1),
+            "cross_segment_relevance": 10.0 if opportunity["retail"] and opportunity["api_algo"] else 5.0,
+            "cross_topic_support": min(10.0, round(cross_topic_support[topic] * 1.5, 1)),
+            "competitor_context": min(10.0, round(competitor_support[topic] * 1.5, 1)),
+            "nubra_relevance": 15.0,
+        }
+        score = min(100, int(round(sum(components.values()))))
+        scored.append({
+            **opportunity,
+            "opportunity_score": score,
+            "score_band": "High" if score >= 70 else "Medium" if score >= 45 else "Watch",
+            "score_breakdown": components,
+            "score_note": "Prioritization signal combining recurrence, engagement, segment reach, related needs, competitor context and Nubra relevance.",
+        })
+    return sorted(scored, key=lambda item: (item["opportunity_score"], item["mentions"]), reverse=True)
+
+
+def detect_changes(short_days: int = 7, long_days: int = 30) -> dict[str, Any]:
+    short_days = max(1, short_days)
+    long_days = max(short_days + 1, long_days)
+    recent = analyze(short_days)
+    broader = analyze(long_days)
+    recent_by_topic = {row["topic"]: row for row in recent["topics"]}
+    broader_by_topic = {row["topic"]: row for row in broader["topics"]}
+    previous_days = long_days - short_days
+    changes = []
+    for topic in sorted(set(recent_by_topic) | set(broader_by_topic)):
+        if topic == "Other market discussion":
+            continue
+        recent_row = recent_by_topic.get(topic, {})
+        broader_row = broader_by_topic.get(topic, {})
+        recent_count = int(recent_row.get("mentions", 0))
+        previous_count = max(0, int(broader_row.get("mentions", 0)) - recent_count)
+        recent_rate = recent_count / short_days
+        previous_rate = previous_count / previous_days
+        if previous_count == 0 and recent_count >= 2:
+            direction = "New"
+            rate_change = None
+        elif previous_rate == 0:
+            direction = "Stable"
+            rate_change = None
+        else:
+            rate_change = round((recent_rate / previous_rate - 1) * 100, 1)
+            direction = "Rising" if rate_change >= 35 else "Declining" if rate_change <= -30 else "Stable"
+        changes.append({
+            "topic": topic,
+            "direction": direction,
+            "recent_mentions": recent_count,
+            "previous_mentions": previous_count,
+            "recent_daily_rate": round(recent_rate, 2),
+            "previous_daily_rate": round(previous_rate, 2),
+            "rate_change_percent": rate_change,
+            "recent_retail": int(recent_row.get("retail", 0)),
+            "recent_api_algo": int(recent_row.get("api_algo", 0)),
+            "evidence": recent_row.get("examples", [])[:2],
+        })
+    order = {"New": 0, "Rising": 1, "Stable": 2, "Declining": 3}
+    changes.sort(
+        key=lambda row: (
+            order[row["direction"]],
+            -(row["rate_change_percent"] or 0),
+            -row["recent_mentions"],
+        )
+    )
+    return {
+        "short_days": short_days,
+        "long_days": long_days,
+        "comparison": f"Last {short_days} days versus the preceding {previous_days} days",
+        "changes": changes,
+    }
+
+
+def _analysis_fingerprint(root: pathlib.Path, days: int) -> str:
+    health = _local_data_health(root)
+    state = health.get("state", {})
+    payload = {
+        "schema": CACHE_SCHEMA_VERSION,
+        "days": days,
+        "dumps": state.get("dumps", []),
+        "catalog_sha256": state.get("catalog_sha256"),
+        "connector_version": CONNECTOR_VERSION,
+    }
+    return hashlib.sha256(json.dumps(payload, sort_keys=True).encode("utf-8")).hexdigest()
+
+
+def _cache_path(days: int) -> pathlib.Path:
+    return local_root() / "cache" / f"daily-insights-{days}.json"
+
+
+def _load_cached_daily(days: int, fingerprint: str) -> dict[str, Any] | None:
+    path = _cache_path(days)
+    if not path.exists():
+        return None
+    try:
+        cached = _load(path)
+    except (OSError, json.JSONDecodeError, TypeError):
+        return None
+    if cached.get("fingerprint") != fingerprint:
+        return None
+    payload = cached.get("payload")
+    return payload if isinstance(payload, dict) else None
+
+
+def _save_cached_daily(days: int, fingerprint: str, payload: dict[str, Any]) -> None:
+    _write(_cache_path(days), {
+        "schema": CACHE_SCHEMA_VERSION,
+        "fingerprint": fingerprint,
+        "created_at": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "payload": payload,
+    })
+
+
+def _catalog_matches(text: str, limit: int = 12) -> list[dict[str, Any]]:
+    tokens = {token.lower() for token in re.findall(r"[A-Za-z0-9+#-]{3,}", text)}
+    if not tokens:
+        return []
+    db = connect()
+    matches = []
+    for row in db.execute("SELECT * FROM features"):
+        aliases = [row["name"]] + json.loads(row["aliases"])
+        haystack = " ".join([
+            *(str(alias).lower() for alias in aliases),
+            str(row["category"] or "").lower(),
+            str(row["notes"] or "").lower(),
+        ])
+        overlap = sum(1 for token in tokens if token in haystack)
+        exact = any(str(alias).lower() in text.lower() for alias in aliases if len(str(alias)) >= 4)
+        if exact or overlap >= 2:
+            item = dict(row)
+            item["match_score"] = overlap + (3 if exact else 0)
+            item["aliases"] = json.loads(item["aliases"])
+            item["surfaces"] = json.loads(item["surfaces"])
+            matches.append(item)
+    db.close()
+    matches.sort(key=lambda item: item["match_score"], reverse=True)
+    return matches[:limit]
+
+
+def _relevant_topics(question: str, opportunities: list[dict[str, Any]]) -> list[str]:
+    lowered = question.lower()
+    ranked = []
+    for item in opportunities:
+        topic = item["topic"]
+        keywords = TOPICS.get(topic, [])
+        overlap = sum(1 for keyword in keywords if keyword in lowered)
+        overlap += sum(1 for token in re.findall(r"\w+", topic.lower()) if len(token) >= 4 and token in lowered)
+        ranked.append((overlap, item["opportunity_score"], topic))
+    matched = [topic for overlap, _, topic in sorted(ranked, reverse=True) if overlap > 0]
+    return matched or [item["topic"] for item in opportunities[:5]]
+
+
+def suggested_followups(question: str, topics: list[str]) -> list[str]:
+    primary = topics[0] if topics else "the strongest signal"
+    return [
+        f"Show the strongest evidence and counter-signals for {primary}.",
+        f"Compare Nubra with relevant competitors for {primary}.",
+        f"Turn {primary} into product requirements and success measures.",
+        "Separate genuine product gaps from awareness, onboarding and documentation gaps.",
+        "Turn the strongest user problem into a webinar, demo and launch message.",
+    ]
+
+
+def connector_status(refresh: bool = False) -> dict[str, Any]:
+    root = local_root()
+    root.mkdir(parents=True, exist_ok=True)
+    sync_result = sync(force_remote=True) if refresh else None
+    health = _local_data_health(root)
+    counts = {"records": 0, "posts": 0, "comments": 0, "features": 0, "upcoming_features": 0}
+    db_path = root / "insights.sqlite3"
+    if db_path.exists():
+        db = connect(root)
+        counts["posts"] = db.execute("SELECT COUNT(*) FROM posts").fetchone()[0]
+        counts["comments"] = db.execute("SELECT COUNT(*) FROM comments").fetchone()[0]
+        counts["features"] = db.execute("SELECT COUNT(*) FROM features").fetchone()[0]
+        counts["upcoming_features"] = db.execute(
+            "SELECT COUNT(*) FROM features WHERE status IN ('upcoming','partial')"
+        ).fetchone()[0]
+        counts["records"] = counts["posts"] + counts["comments"]
+        db.close()
+    cache_files = list((root / "cache").glob("daily-insights-*.json")) if (root / "cache").exists() else []
+    return {
+        "connector": "reddit-product-insights",
+        "version": CONNECTOR_VERSION,
+        "status": "ready" if health["healthy"] else "needs_repair",
+        "latest_dump": health["latest_dump"],
+        "dump_count": health["dump_count"],
+        "catalog_version": health.get("state", {}).get("catalog_version"),
+        "last_checked_at": health.get("state", {}).get("last_checked_at"),
+        "state_age_hours": None if health["state_age_hours"] is None else round(health["state_age_hours"], 2),
+        "local_folder": str(root),
+        "counts": counts,
+        "cache_entries": len(cache_files),
+        "issues": health["issues"],
+        "refresh": sync_result,
+        "available_tools": [
+            "ask_product_insights", "run_daily_insights", "search_evidence",
+            "get_nubra_feature", "get_retail_upcoming_features",
+            "compare_insight_periods", "get_connector_status", "refresh_insights_data",
+        ],
+    }
+
+
+def ask_insights(question: str, days: int = 30) -> dict[str, Any]:
+    question = question.strip()
+    if not question:
+        raise ValueError("question cannot be empty")
+    daily = daily_insights(days)
+    scored = daily["opportunity_scores"]
+    topics = _relevant_topics(question, scored)
+    relevant_opportunities = [row for row in scored if row["topic"] in topics][:8]
+    evidence = search(question, 12)
+    catalog = _catalog_matches(question)
+    requested_gaps = [
+        row for row in daily["feature_gap_matrix"]
+        if any(token in row["feature"].lower() for token in re.findall(r"\w{4,}", question.lower()))
+    ]
+    wants_upcoming = any(term in question.lower() for term in ("upcoming", "planned", "new feature", "coming up"))
+    upcoming = retail_upcoming_features()["features"] if wants_upcoming else []
+    upcoming_gaps = [{
+        "feature": feature["name"],
+        "classification": "Upcoming",
+        "catalog_status": feature["status"],
+        "gap_type": "Launch readiness and positioning",
+        "mentions": None,
+        "engagement": None,
+        "recommended_action": "Validate the user problem, finalize placement and prepare launch education before external promotion.",
+        "evidence": [],
+        "category": feature["category"],
+        "priority": feature.get("priority"),
+        "user_benefit": feature.get("user_benefit"),
+    } for feature in upcoming]
+    relevant_gaps = upcoming_gaps or requested_gaps or daily["feature_gap_matrix"][:8]
+    trend = daily["trend_changes"]
+    relevant_changes = [row for row in trend["changes"] if row["topic"] in topics][:8]
+    return {
+        "question": question,
+        "period_days": days,
+        "answer_inputs": {
+            "relevant_topics": topics,
+            "product_opportunities": relevant_opportunities,
+            "feature_gap_matrix": relevant_gaps,
+            "catalog_matches": catalog,
+            "retail_upcoming_features": upcoming,
+            "trend_changes": relevant_changes,
+            "evidence": evidence,
+            "competitor_signals": daily["analysis"]["competitor_signals"][:8],
+            "cross_topic_insights": daily["analysis"]["cross_topic_insights"][:8],
+        },
+        "suggested_followups": suggested_followups(question, topics),
+        "response_contract": {
+            "format": "Answer directly in chat using short sections and clean tables where useful.",
+            "required": [
+                "Answer the user's question first",
+                "Connect evidence to the user problem and product implication",
+                "State Nubra coverage accurately",
+                "Separate product gaps from visibility, onboarding, documentation or support gaps",
+                "Recommend practical actions",
+            ],
+            "avoid": [
+                "Methodology narration",
+                "Unsupported certainty",
+                "Treating engagement as unique demand",
+                "Repeating the same recommendation",
+            ],
+        },
+        "data_status": {
+            "available_through": daily["sync"]["available_through"],
+            "catalog_version": daily["sync"]["catalog_version"],
+            "cache_hit": daily["cache_hit"],
+        },
+    }
 
 
 def render_insights_report(
@@ -919,9 +1414,21 @@ def render_insights_report(
     return "\n".join(lines)
 
 
-def daily_insights(days: int = 30) -> dict[str, Any]:
-    sync_result = sync(); data = analyze(days)
+def daily_insights(days: int = 30, use_cache: bool = True) -> dict[str, Any]:
+    sync_result = sync()
+    fingerprint = _analysis_fingerprint(local_root(), days)
+    if use_cache:
+        cached = _load_cached_daily(days, fingerprint)
+        if cached is not None:
+            cached["sync"] = sync_result
+            cached["cache_hit"] = True
+            return cached
+
+    data = analyze(days)
     opportunities = build_product_opportunities(data)
+    opportunity_scores = score_product_opportunities(data, opportunities)
+    feature_gap_matrix = build_feature_gap_matrix(data)
+    trend_changes = detect_changes(min(7, max(1, days - 1)), max(30, days))
     webinars = [
         {
             "title": opportunity["webinar"],
@@ -933,10 +1440,25 @@ def daily_insights(days: int = 30) -> dict[str, Any]:
     ]
     roadmap = build_roadmap(opportunities, data["feature_requests"])
     available_requests = [x for x in data["feature_requests"][:10] if x["status"] == "available"]
-    return {"sync": sync_result, "analysis": data, "product_opportunities": opportunities,
-            "webinars": webinars, "roadmap": roadmap,
-            "awareness_gaps": available_requests,
-            "available_commands": ["/daily-insights", "/new-feature-analysis", "/retail-feature-research", "/channel-insights", "/github-insights", "/trend-check", "/content-plan", "/next-actions", "/feature-requests", "/webinar-ideas", "/roadmap", "/lead-magnets", "/competitors", "/existing-capabilities"]}
+    payload = {
+        "analysis": data,
+        "product_opportunities": opportunities,
+        "opportunity_scores": opportunity_scores,
+        "feature_gap_matrix": feature_gap_matrix,
+        "trend_changes": trend_changes,
+        "webinars": webinars,
+        "roadmap": roadmap,
+        "awareness_gaps": available_requests,
+        "available_commands": [
+            "/ask-insights", "/status", "/daily-insights", "/new-feature-analysis",
+            "/retail-feature-research", "/channel-insights", "/github-insights",
+            "/trend-check", "/content-plan", "/next-actions", "/feature-requests",
+            "/webinar-ideas", "/roadmap", "/lead-magnets", "/competitors",
+            "/existing-capabilities",
+        ],
+    }
+    _save_cached_daily(days, fingerprint, payload)
+    return {"sync": sync_result, **payload, "cache_hit": False}
 
 
 def render_markdown(sync_result, data, webinars, roadmap, awareness) -> str:
@@ -964,4 +1486,8 @@ def render_markdown(sync_result, data, webinars, roadmap, awareness) -> str:
 
 
 def compare_periods(days_a: int = 7, days_b: int = 30) -> dict[str, Any]:
-    return {f"last_{days_a}_days": analyze(days_a), f"last_{days_b}_days": analyze(days_b)}
+    return {
+        f"last_{days_a}_days": analyze(days_a),
+        f"last_{days_b}_days": analyze(days_b),
+        "change_detection": detect_changes(days_a, days_b),
+    }

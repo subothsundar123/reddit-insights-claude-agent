@@ -8,7 +8,9 @@ Update the existing local connector setup completely with minimal user effort.
 
 After this update, the user should be able to run:
 
+- `/ask-insights <question>` and `/status` in Claude Code
 - `/new-feature-analysis` in Claude Code
+- `ask_product_question` and `connector_health` from the Claude Desktop connector prompt menu
 - `new_feature_analysis` from the Claude Desktop connector prompt menu
 
 ## What to do
@@ -80,13 +82,23 @@ After this update, the user should be able to run:
    Check that this file exists:
 
    ```bash
+   test -f .claude/commands/ask-insights.md && echo "ask-insights command found"
+   test -f .claude/commands/status.md && echo "status command found"
    test -f .claude/commands/new-feature-analysis.md && echo "new-feature-analysis command found"
    ```
 
-   Check that the latest connector prompt code contains `new_feature_analysis`:
+   Check that the latest connector contains the universal query, status and feature-analysis prompts:
 
    ```bash
+   grep -R "def ask_product_insights" -n src/reddit_insights_agent/server.py
+   grep -R "def get_connector_status" -n src/reddit_insights_agent/server.py
    grep -R "def new_feature_analysis" -n src/reddit_insights_agent/server.py
+   ```
+
+   Run the built-in health check:
+
+   ```bash
+   python -m reddit_insights_agent.cli status
    ```
 
    Check that the retail upcoming feature list exists:
@@ -118,6 +130,7 @@ When finished, respond with a short status:
 
 - whether connector code was updated
 - whether latest data was refreshed
+- whether `/ask-insights` and `/status` are available
 - whether `/new-feature-analysis` is available
 - whether Claude Desktop needs reload
 
@@ -126,7 +139,7 @@ Use this final wording:
 ```text
 Update complete.
 
-You can now use /new-feature-analysis in Claude Code.
+You can now use /ask-insights, /status and /new-feature-analysis in Claude Code.
 
 If you use Claude Desktop, fully quit and reopen Claude Desktop, then toggle the reddit-product-insights connector off/on. After that use:
 + → Connectors → Add from reddit-product-insights → new_feature_analysis
