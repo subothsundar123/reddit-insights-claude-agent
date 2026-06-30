@@ -19,7 +19,7 @@ from itertools import combinations
 from typing import Any
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-CONNECTOR_VERSION = "2.0.0"
+CONNECTOR_VERSION = "2.1.0"
 CACHE_SCHEMA_VERSION = 1
 DEFAULT_SYNC_MAX_AGE_HOURS = 6
 
@@ -1450,7 +1450,7 @@ def daily_insights(days: int = 30, use_cache: bool = True) -> dict[str, Any]:
         "roadmap": roadmap,
         "awareness_gaps": available_requests,
         "available_commands": [
-            "/ask-insights", "/status", "/daily-insights", "/new-feature-analysis",
+            "/update-connector", "/ask-insights", "/status", "/daily-insights", "/new-feature-analysis",
             "/retail-feature-research", "/channel-insights", "/github-insights",
             "/trend-check", "/content-plan", "/next-actions", "/feature-requests",
             "/webinar-ideas", "/roadmap", "/lead-magnets", "/competitors",

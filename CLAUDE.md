@@ -29,6 +29,7 @@ When the user asks to install, configure or set up the project for Claude Deskto
 17. If MCP tools are unavailable, use the local shell fallback: `bash scripts/refresh-data.sh`, then `.venv/bin/python -m reddit_insights_agent.cli daily-insights --days 30`.
 18. Use the connector's opportunity score as a prioritization aid, not as an automatic roadmap decision. Show the user signal and product reasoning behind the score.
 19. Period comparisons must use normalized daily rates and the preceding non-overlapping period where possible.
+20. For every material connector release, add a dated instruction under `updates/`, update `updates/latest.md`, and keep `/update-connector` compatible. Do not replace or delete historical update instructions.
 
 ## Daily output order
 

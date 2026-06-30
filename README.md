@@ -36,6 +36,7 @@ Then use the project commands:
 
 | Command | Use |
 |---|---|
+| `/update-connector` | Pull and apply the latest dated connector release automatically |
 | `/ask-insights <question>` | Ask any product question using all available intelligence |
 | `/status` | Check connector version, data health, record counts, catalogue and cache |
 | `/daily-insights` | Complete product insight report from the latest dumps |
@@ -57,6 +58,17 @@ For manual data refresh anytime:
 ```bash
 bash scripts/refresh-data.sh
 ```
+
+For future connector code, prompt and intelligence-engine updates, open the
+workspace with `reddit-insights` and run:
+
+```text
+/update-connector
+```
+
+The command pulls the latest `main` branch, reads the latest dated instruction
+from `updates/latest.md`, refreshes data, reinstalls the local package, runs the
+tests and reports whether Claude Desktop needs a restart.
 
 The data source is public, so no GitHub account, token or SSH key is required. If Git is not installed, the sync engine falls back to GitHub ZIP download.
 

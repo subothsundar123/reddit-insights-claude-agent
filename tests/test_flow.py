@@ -34,6 +34,7 @@ class DailyFlowTests(unittest.TestCase):
         self.assertIn("/new-feature-analysis", first["available_commands"])
         self.assertIn("/ask-insights", first["available_commands"])
         self.assertIn("/status", first["available_commands"])
+        self.assertIn("/update-connector", first["available_commands"])
         self.assertIn("/retail-feature-research", first["available_commands"])
         self.assertIn("/channel-insights", first["available_commands"])
         self.assertNotIn("report_markdown", first)
@@ -114,7 +115,7 @@ class DailyFlowTests(unittest.TestCase):
         from reddit_insights_agent.core import connector_status, daily_insights
         daily_insights(30)
         result = connector_status()
-        self.assertEqual(result["version"], "2.0.0")
+        self.assertEqual(result["version"], "2.1.0")
         self.assertEqual(result["status"], "ready")
         self.assertGreater(result["counts"]["records"], 0)
         self.assertGreater(result["counts"]["features"], 0)

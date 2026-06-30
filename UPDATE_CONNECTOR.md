@@ -2,6 +2,10 @@
 
 Use this when the connector is already installed and the user wants the latest prompts, tools, feature catalog and dumps.
 
+After this release is installed, future updates should normally be applied with
+the `/update-connector` command. It pulls the repository and follows the newest
+dated instruction referenced by `updates/latest.md`.
+
 ## Goal
 
 Update the existing local connector setup completely with minimal user effort.
