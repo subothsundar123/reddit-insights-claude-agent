@@ -1,4 +1,5 @@
 import os
+import json
 import pathlib
 import shutil
 import tempfile
@@ -9,6 +10,8 @@ PUBLISHER = pathlib.Path(r"C:\Users\suboth sundar\Downloads\reddit_scraper_githu
 class DailyFlowTests(unittest.TestCase):
     def setUp(self):
         self.temp = pathlib.Path(tempfile.mkdtemp(prefix="insights-agent-test-"))
+        index = json.loads((PUBLISHER / "manifests" / "all_dumps.json").read_text(encoding="utf-8"))
+        self.published_dates = [item["collection_date"] for item in index["dumps"]]
         os.environ["INSIGHTS_DATA_REPO_PATH"] = str(PUBLISHER)
         os.environ["INSIGHTS_LOCAL_DATA_DIR"] = str(self.temp)
         os.environ.pop("INSIGHTS_DESKTOP_LOCAL_ONLY", None)
@@ -21,7 +24,7 @@ class DailyFlowTests(unittest.TestCase):
         from reddit_insights_agent.core import daily_insights
         first = daily_insights(30)
         second = daily_insights(30)
-        self.assertEqual(first["sync"]["new_dumps"], ["2026-06-22", "2026-06-23", "2026-06-24", "2026-06-28", "2026-06-29", "2026-06-30"])
+        self.assertEqual(first["sync"]["new_dumps"], self.published_dates)
         self.assertEqual(second["sync"]["new_dumps"], [])
         self.assertEqual(first["sync"]["catalog_version"], "1.1.0")
         self.assertGreaterEqual(first["analysis"]["sample"]["posts"], 662)
@@ -74,7 +77,7 @@ class DailyFlowTests(unittest.TestCase):
         os.environ["INSIGHTS_DATA_REPO_PATH"] = str(self.temp / "does-not-exist")
         desktop = daily_insights(30)
         self.assertEqual(desktop["sync"]["mode"], "local_files_only")
-        self.assertEqual(desktop["sync"]["available_through"], "2026-06-30")
+        self.assertEqual(desktop["sync"]["available_through"], self.published_dates[-1])
         self.assertGreaterEqual(desktop["analysis"]["sample"]["posts"], 662)
 
     def test_missing_catalog_self_heals_in_local_only_mode(self):
@@ -90,7 +93,7 @@ class DailyFlowTests(unittest.TestCase):
     def test_corrupted_dump_self_heals(self):
         from reddit_insights_agent.core import daily_insights, sync
         daily_insights(30)
-        dump = self.temp / "raw" / "daily-dumps" / "2026-06-29" / "signals.jsonl.gz"
+        dump = self.temp / "raw" / "daily-dumps" / self.published_dates[-1] / "signals.jsonl.gz"
         original = dump.read_bytes()
         dump.write_bytes(b"corrupted")
         result = sync()
