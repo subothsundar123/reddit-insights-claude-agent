@@ -21,17 +21,31 @@ Upcoming retail feature themes to evaluate:
 - OI bars, PCR, Total Call OI, Total Put OI, Max Pain and ITM highlighting
 - VWAP, premium, OI, OI buildup, volume, volume spike, IV, IV change, Greeks, bid-ask spread and OI concentration
 - One-click trade with bid/ask across strikes
+- Watchlists supporting up to 250 instruments with automatic quote refresh
+- Saved OMS order presets
+- Best-fill-price execution on NSE
+- Instant fund addition up to ₹5 lakh and instant withdrawal
+- Natural-language AI-generated market scans
+- Flexible brokerage plans for different trading personas
+- Chart analyser and bid/ask prices on charts
 - F&O analytics on every stock
 - OI/IV/premium/volume plotted against price
 - Straddle and strangle premium charts
 - Futures analytics by expiry
 - Buy/sell actionables inside F&O analytics
-- Strategy Appstore, ready-made strategies and risk-first strategy cards
+- Strategy Appstore with 40+ pre-built strategies and risk-first strategy cards
 - Market View, Trader Outcome and Instrument Set filters
 - Payoff, probability of profit, max profit, max loss, breakeven, margin benefit, SPAN and exposure
 - Build strategy leg by leg with live risk recalculation
+- Strategy-level portfolios and mixed stock/futures/options time-series charts
+- Strategy-level P&L or risk-reward SL/TP controls
+- Quantity sizing from investment amount or available margin
 - Cross-instrument hedging across options, futures and stocks
-- Scalper and Trading View saved templates
+- Scalper mode and saved TradingView templates
+- Two iceberg execution modes, GTT and AMO
+- Flexible modification between eligible order types
+- Removal of unnecessary app-level price restrictions while retaining exchange and risk controls
+- Technical alerts and option-chain alerts
 - Homepage customisation
 - Sector heatmap, FII-DII, global indices, stock comparison and peer comparison
 - Order notes, SL-TP modification, instant exit, OI alerts and volume alerts

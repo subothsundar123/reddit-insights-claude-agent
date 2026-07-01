@@ -260,6 +260,34 @@ Relevant features:
 Retail analysis implication:
 - Reports, alerts, order notes and trade review can become a broader trade-journal and learning loop.
 
+## Confirmed new-build feature input
+
+The following retail capabilities were confirmed as new-build/upcoming input on 2026-07-01. They must not be described as generally available until rollout is verified:
+
+- Watchlists supporting up to 250 instruments with automatic refresh
+- Saved OMS order presets
+- Best-fill-price execution on NSE
+- Instant withdrawal and instant fund addition up to ₹5 lakh
+- Natural-language AI-generated scans
+- Persona-based broker experience for Option Sellers, Option Buyers, Investors and OI Traders
+- Flexible brokerage plan
+- Chart analyser
+- Scalper mode and one-click mode
+- Strategy-level portfolios, P&L/risk-reward SL-TP and mixed-instrument time-series charts
+- Quantity sizing by investment amount or available margin
+- Strategy Appstore with 40+ pre-built strategies
+- Two configurable iceberg modes
+- Removal of unnecessary app-level price restrictions, subject to exchange and risk limits
+- Technical and option-chain alerts
+- Bid/ask visibility in option chain and on charts
+- Saved option-chain filters and persona modes
+- GTT and AMO
+- Flexible order-type modification, including eligible iceberg conversions
+
+Retail analysis implication:
+- Treat “customised broker” as part of persona-based customisation, not as a separate feature.
+- Compare each capability with community demand and competitor execution, and separate feature gaps from launch, visibility and education gaps.
+
 ## Open questions
 
 - Mode selector list and effect of modes are not captured.

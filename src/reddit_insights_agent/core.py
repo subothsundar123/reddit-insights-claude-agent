@@ -19,7 +19,7 @@ from itertools import combinations
 from typing import Any
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-CONNECTOR_VERSION = "2.4.0"
+CONNECTOR_VERSION = "2.5.0"
 CACHE_SCHEMA_VERSION = 1
 DEFAULT_SYNC_MAX_AGE_HOURS = 6
 
