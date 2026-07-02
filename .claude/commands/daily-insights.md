@@ -12,7 +12,7 @@ Optional filters the user can include in the command text:
 Supported channels:
 
 ```text
-all, reddit, youtube, github, hacker_news, broker_docs, manual_research, internal_catalog
+all, reddit, youtube, github, hacker_news, broker_docs, community_forums, manual_research, internal_catalog
 ```
 
 Supported focus values:
@@ -30,6 +30,7 @@ Apply channel and focus filters in the final answer:
 - If channels includes `youtube`, use YouTube video/comment signals and comment-derived pain points.
 - If channels includes `reddit`, use Reddit posts/comments and Reddit research signals.
 - If channels includes `github`, use public GitHub developer/API signals.
+- If channels includes `community_forums`, use broker-owned public forum signals from Zerodha TradingQnA, Dhan MadeForTrade, Upstox Community, Angel One SmartAPI Forum and FYERS Community.
 - If focus is `retail`, exclude API/developer-only conclusions.
 - If focus is `api`, exclude retail-only conclusions.
 - If focus is `new_features`, compare upcoming Nubra features with community demand and competitor evidence.

@@ -30,6 +30,7 @@ flowchart LR
         GitHub["GitHub Search API"]
         HN["Hacker News Algolia API"]
         Docs["Broker and product pages"]
+        Communities["Broker community forums"]
         Manual["Manual public research"]
     end
 
@@ -156,6 +157,7 @@ Collectors live in `reddit-scraper-github-publisher/src/insights_publisher/cli.p
 | Hacker News | `collect_hacker_news_signals` | Algolia API | Normalized signals |
 | Broker docs | `collect_broker_doc_signals` | Public HTTP pages | Normalized signals |
 | YouTube | `collect_youtube_signals` | YouTube Data API | Video/comment signals |
+| Broker communities | `collect_community_signals` | Public forum JSON/API, sitemap and HTML fallback | Forum topic/reply signals |
 | Manual enrichment | `add_manual_research` | Public research JSONL | Normalized signals |
 
 When Reddit credentials are absent, the public JSON fallback is used. Reddit may return HTTP 403/429; current operational fallback is indexed public Reddit research added through manual enrichment.
@@ -165,11 +167,18 @@ When Reddit credentials are absent, the public JSON fallback is used. Reddit may
 | File | Purpose |
 |---|---|
 | `config/channels.json` | Subreddits, listing sorts, Reddit searches and limits |
-| `config/public_signal_sources.json` | GitHub, HN, broker-doc and YouTube sources |
+| `config/public_signal_sources.json` | GitHub, HN, broker-doc, YouTube and community forum sources |
+| `config/community_sources.json` | Broker-owned public community forum sources and collection limits |
 | `config/youtube_keywords.json` | Retail/API partitions, limits and SEO seeds |
 | `config/retail_feature_keywords.json` | Nubra brand sweep, personas and feature queries |
 | `manual-research/source-query-bank.json` | Human/agent public research queries |
 | `marketing-keywords/current.json` | SEO catalog and compact daily search seeds |
+
+Broker communities are collected as public product signals. The current
+community collector covers Zerodha TradingQnA, Dhan MadeForTrade, Upstox
+Community, Angel One SmartAPI Forum and FYERS Community through public JSON/API,
+sitemap or lightweight HTML fallback. These rows use `source=community_forum`
+and are imported by the connector like other `signals.jsonl.gz` evidence.
 
 ### 5.3 YouTube query planner
 

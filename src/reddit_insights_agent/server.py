@@ -228,13 +228,14 @@ def _channel_focus_rules(channels: str, focus: str) -> str:
     focus_text = (focus or "both").strip().lower()
     return (
         f"Channel selection: {channel_text}. Focus selection: {focus_text}. "
-        "Supported channels are all, reddit, youtube, github, hacker_news, broker_docs, manual_research and internal_catalog. "
+        "Supported channels are all, reddit, youtube, github, hacker_news, broker_docs, community_forums, manual_research and internal_catalog. "
         "The user may also pass comma-separated combinations such as reddit,youtube or youtube,github. "
         "If channels is all, use every available source in the synchronized dump plus the Nubra catalog. "
         "If a specific channel is selected, use only evidence from that channel plus the Nubra catalog for coverage checks. "
         "Map channel filters this way: reddit means Reddit posts/comments and Reddit research signals; youtube means YouTube Data API "
         "video/comment signals; github means GitHub public issues and repositories; hacker_news means Hacker News public search signals; "
-        "broker_docs means public broker/API documentation pages; manual_research means manual web research and user-provided research notes; "
+        "broker_docs means public broker/API documentation pages; community_forums means broker-owned public forums such as Zerodha TradingQnA, "
+        "Dhan MadeForTrade, Upstox Community, Angel One SmartAPI Forum and FYERS Community; manual_research means manual web research and user-provided research notes; "
         "internal_catalog means Nubra feature catalog and app context only. "
         "Supported focus values are both, retail, api, new_features, content, competitors, pain_points, roadmap, webinars and lead_magnets. "
         "If focus is retail, exclude API/developer-only conclusions. If focus is api, exclude retail-only conclusions. "

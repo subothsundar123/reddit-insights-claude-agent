@@ -43,7 +43,7 @@ Then use the project commands:
 | `/status` | Check connector version, data health, record counts, catalogue and cache |
 | `/daily-insights` | Complete product insight report from the latest dumps; supports days, channels and focus filters |
 | `/retail-feature-research` | Detailed retail analysis of upcoming Nubra features vs Reddit demand and competitors |
-| `/channel-insights` | Source-wise view across Reddit, GitHub, Hacker News, broker docs and future channels |
+| `/channel-insights` | Source-wise view across Reddit, YouTube, GitHub, Hacker News, broker docs, broker communities and future channels |
 | `/github-insights` | Developer/API demand from public GitHub issues and repos |
 | `/youtube-insights` | Retail/API YouTube comment signals, reach metrics, competitor mentions and content ideas |
 | `/seo-insights` | Marketing SEO keyword opportunities mapped to Nubra features, competitors and community demand |
@@ -85,7 +85,7 @@ Daily insights can be filtered when needed:
 /daily-insights days=30 channels=all focus=new_features
 ```
 
-Supported channels are `all`, `reddit`, `youtube`, `github`, `hacker_news`, `broker_docs`, `manual_research` and `internal_catalog`.
+Supported channels are `all`, `reddit`, `youtube`, `github`, `hacker_news`, `broker_docs`, `community_forums`, `manual_research` and `internal_catalog`.
 Supported focus values are `both`, `retail`, `api`, `new_features`, `content`, `competitors`, `pain_points`, `roadmap`, `webinars` and `lead_magnets`.
 
 If the shell says `reddit-insights: command not found`, add `~/.local/bin` to `PATH`, then reopen the terminal:
