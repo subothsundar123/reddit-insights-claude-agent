@@ -1,5 +1,7 @@
 # Reddit Product Insights Agent
 
+For the complete developer-facing design, read [ARCHITECTURE.md](ARCHITECTURE.md).
+
 Version 2 adds self-healing data sync, connector health checks, cached analysis,
 evidence-backed answers, feature-gap classification, opportunity scoring,
 period-over-period change detection and one universal product-question workflow.
